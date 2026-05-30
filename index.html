@@ -22,6 +22,7 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
+        /* Attention shake for the copy link box */
         .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     </style>
@@ -32,6 +33,7 @@
         <!-- Event rows will be injected here -->
     </div>
 
+    <!-- Hover-to-Add Button -->
     <div class="w-full max-w-2xl mt-3 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-2 relative group cursor-pointer" id="btn-add-new">
         <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
         <button class="bg-gray-50 dark:bg-[#202020] hover:bg-gray-100 dark:hover:bg-[#252525] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full p-2 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
@@ -175,13 +177,11 @@
                     row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.25rem] transition-all duration-300 hover:shadow-md fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left: Refined Countdown Data -->
-                        <div class="flex-shrink-0 w-28 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex flex-col items-center justify-center">
-                            <div class="flex items-baseline gap-1">
-                                <span id="days-val-${ev.id}" class="text-lg font-bold tabular-nums text-gray-800 dark:text-gray-200">--</span>
-                                <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Days</span>
+                        <!-- Left: Uniform Size Countdown Data (Days, Hrs, Mins) -->
+                        <div class="flex-shrink-0 w-[140px] sm:w-[160px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex items-center justify-center">
+                            <div id="countdown-val-${ev.id}" class="w-full">
+                                <!-- JS will inject the exact time here -->
                             </div>
-                            <span id="time-val-${ev.id}" class="text-[11px] font-mono tracking-wider text-gray-400 dark:text-gray-500 mt-0.5">--:--:--</span>
                         </div>
                         
                         <!-- Right: Event Title -->
@@ -205,33 +205,47 @@
                 const now = new Date().getTime();
                 
                 events.forEach(ev => {
-                    const daysEl = document.getElementById(`days-val-${ev.id}`);
-                    const timeEl = document.getElementById(`time-val-${ev.id}`);
-                    if (!daysEl || !timeEl) return;
+                    const el = document.getElementById(`countdown-val-${ev.id}`);
+                    if (!el) return;
 
                     // Calculate target at 00:00:00 of the selected date
                     const targetDate = new Date(ev.date + 'T00:00:00').getTime();
                     const diff = targetDate - now;
 
                     if (diff <= 0) {
-                        daysEl.textContent = '0';
-                        daysEl.className = "text-lg font-bold tabular-nums text-gray-400 dark:text-gray-500";
-                        timeEl.textContent = '00:00:00';
+                        el.innerHTML = `
+                            <div class="flex justify-center gap-3 sm:gap-4 text-center opacity-50">
+                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">0</span><span class="text-[9px] font-bold tracking-wider text-gray-500">DAYS</span></div>
+                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">00</span><span class="text-[9px] font-bold tracking-wider text-gray-500">HRS</span></div>
+                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">00</span><span class="text-[9px] font-bold tracking-wider text-gray-500">MINS</span></div>
+                            </div>
+                        `;
                         return;
                     }
 
                     const d = Math.floor(diff / (1000 * 60 * 60 * 24));
                     const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                    daysEl.textContent = d;
-                    daysEl.className = "text-lg font-bold tabular-nums text-gray-800 dark:text-gray-200";
-                    timeEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+                    el.innerHTML = `
+                        <div class="flex justify-center gap-3 sm:gap-4 text-center text-gray-800 dark:text-gray-200">
+                            <div class="flex flex-col items-center">
+                                <span class="text-base sm:text-lg font-bold tabular-nums">${d}</span>
+                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">DAYS</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-base sm:text-lg font-bold tabular-nums">${pad(h)}</span>
+                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">HRS</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-base sm:text-lg font-bold tabular-nums">${pad(m)}</span>
+                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">MINS</span>
+                            </div>
+                        </div>
+                    `;
                 });
             }
 
-            
             // Add New Button
             btnAddNew.addEventListener('click', () => { 
                 overlay.style.display = 'flex'; 
@@ -318,7 +332,8 @@
             }
             
             renderBanners();
-            tickInterval = setInterval(updateTicks, 1000); // Tick every second
+            // Update every minute is enough since we only show minutes, but running every 1s is fine too for precision
+            tickInterval = setInterval(updateTicks, 1000); 
         });
     </script>
 </body>
