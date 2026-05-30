@@ -191,8 +191,8 @@
                     row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.25rem] transition-all duration-300 hover:shadow-md fade-in";
                     
                     row.innerHTML = `
-                        <!-- WIDER Left Side: Adjusted from w-170px to w-230px -->
-                        <div class="flex-shrink-0 w-[230px] sm:w-[270px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 px-2 sm:px-3 flex items-center justify-center">
+                        <!-- Left Side: Adjusted width for perfect balance -->
+                        <div class="flex-shrink-0 w-28 sm:w-32 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 px-2 sm:px-3 flex items-center justify-center">
                             <div id="countdown-val-${ev.id}" class="w-full">
                                 <!-- JS will inject the exact time here -->
                             </div>
@@ -228,10 +228,14 @@
 
                     if (diff <= 0) {
                         el.innerHTML = `
-                            <div class="flex flex-wrap justify-center items-baseline gap-x-1 opacity-50">
-                                <span class="text-base sm:text-lg font-bold tabular-nums">0</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Day</span>
-                                <span class="text-base sm:text-lg font-bold tabular-nums ml-1">00</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Hour</span>
-                                <span class="text-base sm:text-lg font-bold tabular-nums ml-1">00</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Min</span>
+                            <div class="flex flex-col items-center justify-center w-full opacity-60 text-green-600 dark:text-green-500">
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-xl sm:text-2xl font-bold tabular-nums">0</span>
+                                    <span class="text-[10px] sm:text-xs font-medium">Today</span>
+                                </div>
+                                <div class="text-[12px] sm:text-[13px] font-bold tabular-nums tracking-widest mt-0.5">
+                                    00:00
+                                </div>
                             </div>
                         `;
                         return;
@@ -242,15 +246,17 @@
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
                     const dLabel = d <= 1 ? 'Day' : 'Days';
-                    const hLabel = h <= 1 ? 'Hour' : 'Hours';
-                    const mLabel = m <= 1 ? 'Min' : 'Mins';
 
-                    // Adjusted layout gap to fit the wider container beautifully
+                    // Stacked elegant layout to fill vertical space perfectly
                     el.innerHTML = `
-                        <div class="flex flex-wrap justify-center items-baseline gap-x-1.5 sm:gap-x-2 text-gray-800 dark:text-gray-200">
-                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight">${d}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
-                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight ml-1">${pad(h)}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${hLabel}</span>
-                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight ml-1">${pad(m)}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${mLabel}</span>
+                        <div class="flex flex-col items-center justify-center w-full">
+                            <div class="flex items-baseline gap-1 text-gray-800 dark:text-gray-200">
+                                <span class="text-xl sm:text-2xl font-bold tabular-nums tracking-tight">${d}</span>
+                                <span class="text-[11px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
+                            </div>
+                            <div class="text-[12px] sm:text-[13px] font-bold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">
+                                ${pad(h)}:${pad(m)}
+                            </div>
                         </div>
                     `;
                 });
