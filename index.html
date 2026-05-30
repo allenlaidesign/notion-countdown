@@ -178,7 +178,7 @@
                     
                     row.innerHTML = `
                         <!-- Left: Uniform Size Countdown Data (Days, Hrs, Mins) -->
-                        <div class="flex-shrink-0 w-[140px] sm:w-[160px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex items-center justify-center">
+                        <div class="flex-shrink-0 w-[170px] sm:w-[210px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex items-center justify-center">
                             <div id="countdown-val-${ev.id}" class="w-full">
                                 <!-- JS will inject the exact time here -->
                             </div>
@@ -214,10 +214,10 @@
 
                     if (diff <= 0) {
                         el.innerHTML = `
-                            <div class="flex justify-center gap-3 sm:gap-4 text-center opacity-50">
-                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">0</span><span class="text-[9px] font-bold tracking-wider text-gray-500">DAYS</span></div>
-                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">00</span><span class="text-[9px] font-bold tracking-wider text-gray-500">HRS</span></div>
-                                <div class="flex flex-col items-center"><span class="text-base sm:text-lg font-bold tabular-nums">00</span><span class="text-[9px] font-bold tracking-wider text-gray-500">MINS</span></div>
+                            <div class="flex flex-wrap justify-center items-baseline gap-x-1 opacity-50">
+                                <span class="text-base sm:text-lg font-bold tabular-nums">0</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Day</span>
+                                <span class="text-base sm:text-lg font-bold tabular-nums ml-1">00</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Hour</span>
+                                <span class="text-base sm:text-lg font-bold tabular-nums ml-1">00</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">Min</span>
                             </div>
                         `;
                         return;
@@ -227,20 +227,15 @@
                     const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
+                    const dLabel = d <= 1 ? 'Day' : 'Days';
+                    const hLabel = h <= 1 ? 'Hour' : 'Hours';
+                    const mLabel = m <= 1 ? 'Min' : 'Mins';
+
                     el.innerHTML = `
-                        <div class="flex justify-center gap-3 sm:gap-4 text-center text-gray-800 dark:text-gray-200">
-                            <div class="flex flex-col items-center">
-                                <span class="text-base sm:text-lg font-bold tabular-nums">${d}</span>
-                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">DAYS</span>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-base sm:text-lg font-bold tabular-nums">${pad(h)}</span>
-                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">HRS</span>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <span class="text-base sm:text-lg font-bold tabular-nums">${pad(m)}</span>
-                                <span class="text-[9px] font-bold tracking-wider text-gray-400 dark:text-gray-500">MINS</span>
-                            </div>
+                        <div class="flex flex-wrap justify-center items-baseline gap-x-1 text-gray-800 dark:text-gray-200">
+                            <span class="text-base sm:text-lg font-bold tabular-nums">${d}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
+                            <span class="text-base sm:text-lg font-bold tabular-nums ml-1 sm:ml-1.5">${pad(h)}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${hLabel}</span>
+                            <span class="text-base sm:text-lg font-bold tabular-nums ml-1 sm:ml-1.5">${pad(m)}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${mLabel}</span>
                         </div>
                     `;
                 });
