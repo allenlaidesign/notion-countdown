@@ -19,248 +19,277 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Marquee Animation */
-        .marquee-wrapper { overflow: hidden; white-space: nowrap; width: 100%; display: flex; align-items: center; position: relative; }
-        .marquee-text { 
-            display: inline-block; 
-            padding-left: 100%; 
-            animation: marquee-scroll 8s linear infinite; 
-            will-change: transform; 
-        }
-        @keyframes marquee-scroll { 
-            0% { transform: translateX(0); } 
-            100% { transform: translateX(-100%); } 
-        }
+        /* Smooth fade in for rows */
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased h-screen w-screen flex items-center justify-center p-2 overflow-hidden m-0">
+<body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
 
-    <!-- Main Widget Banner -->
-    <div id="widget-container" class="group relative w-full max-w-2xl bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm flex items-center overflow-hidden transition-colors duration-300">
-        
-        <!-- Left: Countdown -->
-        <div class="flex-shrink-0 w-24 sm:w-28 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-3 flex flex-col items-center justify-center transition-colors duration-300 z-10">
-            <span id="countdown-number" class="text-xl sm:text-2xl font-bold leading-none tabular-nums">--</span>
-            <span id="countdown-label" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Loading</span>
-        </div>
-
-        <!-- Right: Marquee & Add Button -->
-        <div class="flex-grow relative h-14 sm:h-16 flex items-center overflow-hidden">
-            <div class="marquee-wrapper h-full">
-                <div id="event-title" class="marquee-text text-sm sm:text-base font-medium">Loading events...</div>
-            </div>
-            
-            <!-- Always visible + button for easier interaction in Notion -->
-            <button id="btn-open-modal" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-md bg-white dark:bg-[#191919] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 shadow-sm border border-gray-200 dark:border-gray-700 z-20 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </button>
-        </div>
+    <!-- Container for all Event Banners -->
+    <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col">
+        <!-- Event rows will be injected here by JS -->
     </div>
 
-    <!-- Settings Modal Overlay -->
+    <!-- Hover-to-Add Area at the bottom -->
+    <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-2 relative group cursor-pointer" id="btn-add-new">
+        <!-- Dashed border visualization on hover -->
+        <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
+        
+        <button class="bg-gray-100 dark:bg-[#202020] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full p-2.5 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+    </div>
+
+    <!-- Settings & Add Modal -->
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4" style="display: none;">
-        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative">
+        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in">
             
-            <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                <h2 class="text-lg font-semibold">Manage Events</h2>
+                <h2 id="modal-title" class="text-lg font-semibold">Add New Event</h2>
                 <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 p-1 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
-            <!-- Input Area -->
-            <div class="p-4 bg-gray-50 dark:bg-[#252525]">
+            <div class="p-4 bg-gray-50 dark:bg-[#252525] rounded-b-xl">
                 <input type="hidden" id="edit-id" value="">
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Event Title</label>
-                        <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Event Title</label>
+                        <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Target Date</label>
-                        <input type="date" id="input-date" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [color-scheme:light] dark:[color-scheme:dark]">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Target Date & Time</label>
+                        <!-- Changed to datetime-local and added lang="en-US" -->
+                        <input type="datetime-local" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
                     </div>
-                    <div class="flex gap-2 pt-1">
-                        <button id="btn-save" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors cursor-pointer">Add Event</button>
-                        <button id="btn-cancel" class="hidden px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors cursor-pointer">Cancel</button>
+                    <div class="flex gap-2 pt-2">
+                        <button id="btn-save" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer">Save Event</button>
+                        <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
                     </div>
                 </div>
-            </div>
 
-            <!-- List Area -->
-            <div class="flex-1 overflow-y-auto no-scrollbar p-4">
-                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Existing Events</h3>
-                <ul id="event-list" class="space-y-2"></ul>
+                <!-- Dedicated Notion Embed Link Area -->
+                <div class="mt-6 p-3.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/60 rounded-lg">
+                    <label class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1.5">Notion Embed Link (Crucial)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="embed-link" readonly class="w-full px-2.5 py-1.5 bg-white dark:bg-[#191919] border border-blue-200 dark:border-blue-700 rounded text-xs text-gray-600 dark:text-gray-400 focus:outline-none shadow-inner">
+                        <button id="btn-copy-link" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap shadow-sm cursor-pointer transition-colors">Copy</button>
+                    </div>
+                    <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-2 leading-relaxed">
+                        Whenever you add, edit, or delete an event, you <strong>must copy this new link</strong> and replace the embed block in Notion. This guarantees your data never resets!
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Toast Message -->
-    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-[200]">
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-[200]">
         Notification
     </div>
 
-    <!-- Core Logic -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // State
-            let events = JSON.parse(localStorage.getItem('notion_countdown_events')) || [];
-            let currentIndex = 0;
+            let events = [];
+            let tickInterval = null;
+
+            // --- Encoding/Decoding for URL State ---
+            function encodeData(data) { return btoa(encodeURIComponent(JSON.stringify(data))); }
+            function decodeData(str) { try { return JSON.parse(decodeURIComponent(atob(str))); } catch (e) { return null; } }
+
+            // Load Initial Data (Prioritize URL)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlData = urlParams.get('d');
+            
+            if (urlData) {
+                const decoded = decodeData(urlData);
+                if (decoded && Array.isArray(decoded)) events = decoded;
+            } else {
+                try {
+                    const stored = localStorage.getItem('notion_countdown_events_v2');
+                    if (stored) events = JSON.parse(stored);
+                } catch (e) { console.warn("Storage blocked"); }
+            }
 
             // DOM Elements
-            const elNumber = document.getElementById('countdown-number');
-            const elLabel = document.getElementById('countdown-label');
-            const elTitle = document.getElementById('event-title');
-            
+            const container = document.getElementById('events-container');
+            const btnAddNew = document.getElementById('btn-add-new');
             const overlay = document.getElementById('modal-overlay');
-            const btnOpen = document.getElementById('btn-open-modal');
             const btnClose = document.getElementById('btn-close-modal');
-            
             const inputTitle = document.getElementById('input-title');
             const inputDate = document.getElementById('input-date');
             const inputId = document.getElementById('edit-id');
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
-            const listContainer = document.getElementById('event-list');
             const toast = document.getElementById('toast');
+            const embedLinkInput = document.getElementById('embed-link');
+            const btnCopyLink = document.getElementById('btn-copy-link');
+            const modalTitle = document.getElementById('modal-title');
 
-            // --- Functions ---
+            // Formats number to 2 digits (e.g. 5 -> "05")
+            const pad = (n) => n.toString().padStart(2, '0');
 
-            function calcDaysLeft(dateStr) {
-                const today = new Date(); today.setHours(0, 0, 0, 0); 
-                const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
-                return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-            }
+            function getRemainingTime(targetStr) {
+                const now = new Date().getTime();
+                const target = new Date(targetStr).getTime();
+                const diff = target - now;
 
-            function updateMarquee() {
-                if (events.length === 0) {
-                    elNumber.textContent = "--"; 
-                    elLabel.textContent = "Days";
-                    elTitle.textContent = "Click + to add events"; 
-                    return;
-                }
+                if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0, ended: true };
 
-                if (currentIndex >= events.length) currentIndex = 0;
-                
-                const ev = events[currentIndex];
-                const days = calcDaysLeft(ev.date);
-                
-                let numStr = "", labelStr = "", colClass = "text-gray-800 dark:text-gray-200"; 
-                if (days > 0) { 
-                    numStr = days; labelStr = days === 1 ? "Day" : "Days"; 
-                } else if (days === 0) { 
-                    numStr = "0"; labelStr = "Today"; colClass = "text-green-600 dark:text-green-500"; 
-                } else { 
-                    numStr = Math.abs(days); labelStr = "Days Ago"; colClass = "text-gray-400 dark:text-gray-500"; 
-                }
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                elTitle.textContent = ev.title; 
-                elNumber.textContent = numStr; 
-                elLabel.textContent = labelStr;
-                elNumber.className = `text-xl sm:text-2xl font-bold leading-none tabular-nums transition-colors duration-300 ${colClass}`;
-                
-                currentIndex = (currentIndex + 1) % events.length;
-            }
-
-            function refreshAnimation() {
-                elTitle.style.animation = 'none'; 
-                void elTitle.offsetWidth; // trigger reflow
-                elTitle.style.animation = ''; 
-                updateMarquee();
+                return { d, h, m, s, ended: false };
             }
 
             function showToast(msg) { 
                 toast.textContent = msg; 
-                toast.style.opacity = '1'; 
-                setTimeout(() => toast.style.opacity = '0', 2000); 
+                toast.classList.remove('opacity-0', 'translate-y-4'); 
+                setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000); 
+            }
+
+            function updateEmbedLink() {
+                const baseUrl = window.location.origin + window.location.pathname;
+                const link = events.length > 0 ? `${baseUrl}?d=${encodeData(events)}` : baseUrl;
+                embedLinkInput.value = link;
             }
 
             function saveData() { 
-                localStorage.setItem('notion_countdown_events', JSON.stringify(events)); 
-                renderList(); 
-                refreshAnimation(); 
+                if (!urlData) {
+                    try { localStorage.setItem('notion_countdown_events_v2', JSON.stringify(events)); } catch (e) {}
+                }
+                updateEmbedLink();
+                renderBanners(); 
             }
 
             function resetForm() { 
-                inputTitle.value = ""; inputDate.value = ""; inputId.value = ""; 
-                btnSave.textContent = "Add Event"; btnCancel.classList.add('hidden'); 
+                inputTitle.value = ""; 
+                inputDate.value = ""; 
+                inputId.value = ""; 
+                modalTitle.textContent = "Add New Event";
+                btnSave.textContent = "Save Event"; 
+                btnCancel.classList.add('hidden'); 
             }
 
-            function renderList() {
-                listContainer.innerHTML = '';
-                if (events.length === 0) { 
-                    listContainer.innerHTML = '<li class="text-sm text-gray-500 text-center py-4">No events yet</li>'; 
-                    return; 
+            // --- UI Rendering ---
+
+            function renderBanners() {
+                container.innerHTML = '';
+                
+                if (events.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white dark:bg-[#191919] border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center text-gray-500 text-sm fade-in">
+                            No events yet. Hover below to add one!
+                        </div>
+                    `;
+                    return;
                 }
 
                 events.forEach(ev => {
-                    const days = calcDaysLeft(ev.date);
-                    let badge = days > 0 ? `<span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">${days} Days</span>` : 
-                                days === 0 ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Today</span>` : 
-                                `<span class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-400 px-2 py-1 rounded">Ended</span>`;
+                    const row = document.createElement('div');
+                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-16 sm:h-20 transition-all duration-300 hover:shadow-md fade-in";
                     
-                    const li = document.createElement('li');
-                    li.className = "flex items-center justify-between p-3 bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg";
-                    li.innerHTML = `
-                        <div class="flex flex-col overflow-hidden">
-                            <span class="font-medium text-sm truncate">${ev.title}</span>
-                            <div class="flex items-center gap-2 mt-1"><span class="text-xs text-gray-500">${ev.date}</span>${badge}</div>
+                    row.innerHTML = `
+                        <!-- Left: Countdown Data -->
+                        <div class="flex-shrink-0 w-28 sm:w-32 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex flex-col items-center justify-center transition-colors">
+                            <span id="days-${ev.id}" class="text-xl sm:text-2xl font-bold leading-none tabular-nums text-gray-800 dark:text-gray-200">--</span>
+                            <span id="time-${ev.id}" class="text-xs sm:text-[13px] font-semibold tabular-nums tracking-widest text-gray-500 mt-1 opacity-90">--:--:--</span>
                         </div>
-                        <div class="flex gap-1 ml-2 flex-shrink-0">
-                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md cursor-pointer">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 text-red-600 hover:bg-red-50 rounded-md cursor-pointer">✕</button>
+                        
+                        <!-- Right: Event Title -->
+                        <div class="flex-grow p-3 sm:p-4 flex items-center overflow-hidden">
+                            <span class="font-medium text-sm sm:text-base truncate pr-16">${ev.title}</span>
+                        </div>
+
+                        <!-- Hover Actions (Edit & Delete) -->
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none">✕</button>
                         </div>
                     `;
-                    listContainer.appendChild(li);
+                    container.appendChild(row);
+                });
+
+                // Immediately tick once to prevent "--:--:--" flashing
+                tickTime();
+            }
+
+            // --- The Ticking Core ---
+            function tickTime() {
+                events.forEach(ev => {
+                    const daysEl = document.getElementById(`days-${ev.id}`);
+                    const timeEl = document.getElementById(`time-${ev.id}`);
+                    
+                    if (!daysEl || !timeEl) return;
+                    
+                    const rem = getRemainingTime(ev.date);
+                    
+                    if (rem.ended) {
+                        daysEl.innerHTML = `0 <span class="text-[10px] sm:text-xs font-normal">Days</span>`;
+                        daysEl.className = "text-xl sm:text-2xl font-bold leading-none tabular-nums text-gray-400 dark:text-gray-500";
+                        timeEl.textContent = `00:00:00`;
+                    } else {
+                        daysEl.innerHTML = `${rem.d} <span class="text-[10px] sm:text-xs font-normal">Days</span>`;
+                        daysEl.className = "text-xl sm:text-2xl font-bold leading-none tabular-nums text-gray-800 dark:text-gray-200";
+                        timeEl.textContent = `${pad(rem.h)}:${pad(rem.m)}:${pad(rem.s)}`;
+                    }
                 });
             }
 
             // --- Event Listeners ---
-            
-            // Loop Marquee
-            elTitle.addEventListener('animationiteration', updateMarquee);
 
-            // Modal Controls
-            btnOpen.addEventListener('click', () => { 
+            // Hover Add Area
+            btnAddNew.addEventListener('click', () => { 
                 overlay.style.display = 'flex'; 
-                renderList(); 
                 resetForm(); 
-            });
-            
-            btnClose.addEventListener('click', () => { 
-                overlay.style.display = 'none'; 
-            });
-            
-            // Close modal when clicking outside the box
-            overlay.addEventListener('click', (e) => { 
-                if (e.target === overlay) overlay.style.display = 'none'; 
+                updateEmbedLink();
             });
 
-            // Save / Add Event
+            // Close Modal
+            btnClose.addEventListener('click', () => { overlay.style.display = 'none'; });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+            btnCancel.addEventListener('click', () => { overlay.style.display = 'none'; });
+
+            // Copy Link Button
+            btnCopyLink.addEventListener('click', () => {
+                embedLinkInput.select();
+                document.execCommand('copy');
+                showToast("✅ Copied! Now replace the embed link in Notion.");
+            });
+
+            // Save / Edit Event
             btnSave.addEventListener('click', () => {
                 const title = inputTitle.value.trim();
                 const date = inputDate.value;
                 const editId = inputId.value;
 
-                if (!title || !date) return showToast("Please enter a title and date!");
+                if (!title || !date) return showToast("⚠️ Please enter a title and date/time!");
                 
                 if (editId) { 
                     const idx = events.findIndex(e => e.id === editId); 
-                    if (idx !== -1) { events[idx] = { id: editId, title, date }; showToast("Event updated"); } 
+                    if (idx !== -1) { 
+                        events[idx] = { id: editId, title, date }; 
+                        showToast("Event updated! Please copy the new link."); 
+                    } 
                 } else { 
-                    events.push({ id: Date.now().toString(), title, date }); showToast("Event added"); 
+                    events.push({ id: Date.now().toString(), title, date }); 
+                    showToast("Event added! Please copy the new link."); 
                 }
                 
-                currentIndex = 0; 
                 saveData(); 
-                resetForm();
+                
+                // Highlight link for user to easily copy
+                setTimeout(() => {
+                    embedLinkInput.select();
+                }, 100);
             });
 
-            btnCancel.addEventListener('click', resetForm);
-
-            // List Actions (Edit / Delete) using Event Delegation
-            listContainer.addEventListener('click', (e) => {
+            // Edit / Delete Actions via Event Delegation
+            container.addEventListener('click', (e) => {
                 const btn = e.target.closest('button');
                 if (!btn) return;
                 
@@ -270,29 +299,58 @@
                 if (action === 'edit') {
                     const ev = events.find(e => e.id === id);
                     if (ev) { 
+                        modalTitle.textContent = "Edit Event";
                         inputTitle.value = ev.title; 
                         inputDate.value = ev.date; 
                         inputId.value = ev.id; 
                         btnSave.textContent = "Save Changes"; 
                         btnCancel.classList.remove('hidden'); 
+                        overlay.style.display = 'flex';
+                        updateEmbedLink();
                     }
                 } else if (action === 'delete') {
                     events = events.filter(e => e.id !== id); 
-                    showToast("Event deleted"); 
-                    currentIndex = 0; 
                     saveData(); 
+                    showToast("Event deleted! Please copy the updated link.");
+                    // Briefly show modal to grab the new URL
+                    overlay.style.display = 'flex';
                     resetForm();
+                    modalTitle.textContent = "Event Deleted";
+                    btnSave.classList.add('hidden');
+                    btnCancel.classList.remove('hidden');
+                    btnCancel.textContent = "Close";
+                    
+                    setTimeout(() => {
+                         btnSave.classList.remove('hidden');
+                         btnCancel.textContent = "Cancel";
+                         btnCancel.classList.add('hidden');
+                    }, 500);
                 }
             });
 
-            // --- Init ---
-            if (events.length === 0) { 
-                const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7); 
-                events.push({ id: 'demo1', title: 'Welcome! Click + to manage events', date: nextWeek.toISOString().split('T')[0] }); 
+            // --- Initialization ---
+            if (events.length === 0 && !urlData) { 
+                // Default sample date (7 days later, noon)
+                const nextWeek = new Date(); 
+                nextWeek.setDate(nextWeek.getDate() + 7);
+                nextWeek.setHours(12, 0, 0, 0);
+                
+                // Format to YYYY-MM-DDTHH:mm required by datetime-local
+                const year = nextWeek.getFullYear();
+                const month = pad(nextWeek.getMonth() + 1);
+                const day = pad(nextWeek.getDate());
+                const hours = pad(nextWeek.getHours());
+                const minutes = pad(nextWeek.getMinutes());
+                const dateStr = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+                events.push({ id: 'demo1', title: 'Welcome! Hover below to add more.', date: dateStr }); 
                 saveData(); 
-            } else { 
-                refreshAnimation(); 
+            } else {
+                renderBanners();
             }
+
+            // Start the 1-second interval timer
+            tickInterval = setInterval(tickTime, 1000);
         });
     </script>
 </body>
