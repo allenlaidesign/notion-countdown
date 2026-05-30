@@ -175,6 +175,9 @@
             }
 
             function renderBanners() {
+                // 自動將活動按日期先後排序（越近嘅排越上）
+                events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
                 container.innerHTML = '';
                 
                 if (events.length === 0) {
