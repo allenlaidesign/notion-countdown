@@ -200,7 +200,7 @@
                         
                         <!-- Right: Event Title -->
                         <div class="flex-grow p-3 sm:p-4 flex items-center overflow-hidden">
-                            <span class="font-medium text-sm sm:text-[15px] text-gray-700 dark:text-gray-200 truncate pr-16">${ev.title}</span>
+                            <span class="font-semibold text-[15px] sm:text-base text-gray-800 dark:text-gray-100 truncate pr-16">${ev.title}</span>
                         </div>
 
                         <!-- Hover Actions -->
@@ -233,8 +233,8 @@
                                     <span class="text-xl sm:text-2xl font-bold tabular-nums">0</span>
                                     <span class="text-[10px] sm:text-xs font-medium">Today</span>
                                 </div>
-                                <div class="text-[12px] sm:text-[13px] font-bold tabular-nums tracking-widest mt-0.5">
-                                    00:00
+                                <div class="text-[11px] sm:text-[12px] font-bold tabular-nums tracking-widest mt-0.5">
+                                    00:00:00
                                 </div>
                             </div>
                         `;
@@ -244,6 +244,7 @@
                     const d = Math.floor(diff / (1000 * 60 * 60 * 24));
                     const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
 
                     const dLabel = d <= 1 ? 'Day' : 'Days';
 
@@ -254,8 +255,8 @@
                                 <span class="text-xl sm:text-2xl font-bold tabular-nums tracking-tight">${d}</span>
                                 <span class="text-[11px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
                             </div>
-                            <div class="text-[12px] sm:text-[13px] font-bold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">
-                                ${pad(h)}:${pad(m)}
+                            <div class="text-[11px] sm:text-[12px] font-bold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">
+                                ${pad(h)}:${pad(m)}:${pad(s)}
                             </div>
                         </div>
                     `;
