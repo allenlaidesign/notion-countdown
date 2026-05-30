@@ -22,12 +22,19 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Animation utilities */
-        .hover-pulse { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .group:hover .hover-pulse { transform: scale(1.05); }
-        
+        /* Hover animation for edit/delete buttons */
         .hover-slide { transition: transform 0.3s ease; }
         .group:hover .hover-slide { transform: translateX(4px); }
+
+        /* Continuous Idle Animation (Breathing Effect) */
+        .animate-breathe {
+            animation: breathe 4s ease-in-out infinite;
+            will-change: transform;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
     </style>
 </head>
 <body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
@@ -47,7 +54,7 @@
 
     <!-- Settings & Add Modal -->
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4" style="display: none;">
-        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in">
+        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in overflow-hidden">
             
             <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
                 <h2 id="modal-title" class="text-lg font-semibold">Add New Event</h2>
@@ -83,7 +90,7 @@
             </div>
 
             <!-- Action Required View (Covers settings perfectly) -->
-            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#252525] w-full text-center rounded-b-xl min-h-[300px]">
+            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#252525] w-full text-center min-h-[300px]">
                 <div class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
                     <span class="text-2xl">⚠️</span>
                 </div>
@@ -127,11 +134,12 @@
                 if (decoded && Array.isArray(decoded)) events = decoded;
             } else {
                 try {
-                    const stored = localStorage.getItem('notion_countdown_events_v4');
+                    const stored = localStorage.getItem('notion_countdown_events_v5');
                     if (stored) events = JSON.parse(stored);
                 } catch (e) { console.warn("Storage blocked"); }
             }
 
+            // DOM Variables
             const container = document.getElementById('events-container');
             const btnAddNew = document.getElementById('btn-add-new');
             const overlay = document.getElementById('modal-overlay');
@@ -153,43 +161,17 @@
 
             const pad = (n) => n.toString().padStart(2, '0');
 
-            // --- Advanced Calendar Logic for Exact Months & Days ---
             function getRemainingTime(targetStr) {
                 const now = new Date();
-                const target = new Date(targetStr + 'T00:00:00');
+                now.setHours(0, 0, 0, 0); // Force current time to midnight
+                const target = new Date(targetStr + 'T00:00:00'); // Force target to midnight
                 const diffMs = target.getTime() - now.getTime();
 
-                if (diffMs <= 0) return { mo: 0, d: 0, h: 0, m: 0, s: 0, ended: true };
+                if (diffMs <= 0) return { d: 0, ended: true };
 
-                let d = new Date(now.getTime());
-                let mo = 0;
-
-                // Smartly add months one by one, checking if it overshoots the target
-                while (true) {
-                    let next = new Date(d.getTime());
-                    let currentMonth = next.getMonth();
-                    next.setMonth(currentMonth + 1);
-                    // Handle edge cases like Jan 31 + 1 month -> Mar 3. Force to Feb 28/29.
-                    if (next.getMonth() !== (currentMonth + 1) % 12) {
-                        next.setDate(0); 
-                    }
-                    
-                    if (next.getTime() <= target.getTime()) {
-                        mo++;
-                        d = next;
-                    } else {
-                        break;
-                    }
-                }
-
-                // Calculate remaining days, hours, mins, secs from the leftover milliseconds
-                const remainderMs = target.getTime() - d.getTime();
-                const days = Math.floor(remainderMs / (1000 * 60 * 60 * 24));
-                const h = Math.floor((remainderMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((remainderMs % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((remainderMs % (1000 * 60)) / 1000);
-
-                return { mo, d: days, h, m, s, ended: false };
+                // Calculate total days left
+                const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                return { d: days, ended: false };
             }
 
             function showToast(msg) { 
@@ -213,7 +195,7 @@
 
             function saveData() { 
                 if (!urlData) { 
-                    try { localStorage.setItem('notion_countdown_events_v4', JSON.stringify(events)); } catch (e) {}
+                    try { localStorage.setItem('notion_countdown_events_v5', JSON.stringify(events)); } catch (e) {}
                 }
                 renderBanners(); 
             }
@@ -247,38 +229,26 @@
 
                 events.forEach(ev => {
                     const row = document.createElement('div');
-                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.5rem] sm:h-20 transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 fade-in";
+                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-20 sm:h-24 transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left: Minimalist Date Countdown UI -->
-                        <div class="flex-shrink-0 px-5 sm:px-8 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors group-hover:bg-gray-100 dark:group-hover:bg-[#252525]">
-                            <div class="flex items-start gap-1 sm:gap-2 text-gray-900 dark:text-gray-100 hover-pulse">
-                                
-                                <!-- Month (Hidden if 0) -->
-                                <div id="block-mo-${ev.id}" class="hidden flex-col items-center">
-                                    <span id="val-mo-${ev.id}" class="text-3xl sm:text-4xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">mths</span>
-                                </div>
-                                <span id="colon-mo-${ev.id}" class="hidden text-3xl sm:text-4xl font-black leading-none relative -top-[2px] opacity-40 mx-1">:</span>
-                                
-                                <!-- Days -->
-                                <div class="flex flex-col items-center">
-                                    <span id="val-d-${ev.id}" class="text-3xl sm:text-4xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">days</span>
-                                </div>
-                                
+                        <!-- Left: Huge Continuous Breathing Days Countdown -->
+                        <div class="flex-shrink-0 px-6 sm:px-10 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors group-hover:bg-gray-100 dark:group-hover:bg-[#252525]">
+                            <div class="flex flex-col items-center animate-breathe">
+                                <span id="val-d-${ev.id}" class="text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-800 dark:text-gray-200">00</span>
+                                <span class="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1.5">days</span>
                             </div>
                         </div>
                         
-                        <!-- Right: Event Title with Slide Animation -->
-                        <div class="flex-grow p-4 sm:p-5 flex items-center overflow-hidden bg-white dark:bg-[#191919] z-10">
+                        <!-- Right: Event Title with slight slide on hover -->
+                        <div class="flex-grow p-4 sm:p-6 flex items-center overflow-hidden bg-white dark:bg-[#191919] z-10">
                             <span class="font-semibold text-base sm:text-lg text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight hover-slide">${ev.title}</span>
                         </div>
 
                         <!-- Hover Actions (Edit & Delete) -->
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✕</button>
+                            <button data-action="edit" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✕</button>
                         </div>
                     `;
                     container.appendChild(row);
@@ -290,33 +260,17 @@
             function tickTime() {
                 events.forEach(ev => {
                     const rem = getRemainingTime(ev.date);
-                    
-                    const valMo = document.getElementById(`val-mo-${ev.id}`);
                     const valD = document.getElementById(`val-d-${ev.id}`);
-                    
-                    const blockMo = document.getElementById(`block-mo-${ev.id}`);
-                    const colonMo = document.getElementById(`colon-mo-${ev.id}`);
                     
                     if (!valD) return;
                     
                     if (rem.ended) {
-                        if (valMo) valMo.textContent = "00";
                         valD.textContent = "00";
-                        if (blockMo) { blockMo.classList.add('hidden'); blockMo.classList.remove('flex'); }
-                        if (colonMo) colonMo.classList.add('hidden');
+                        valD.className = "text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-300 dark:text-gray-600";
                     } else {
-                        // Show/Hide Month Block Dynamically
-                        if (rem.mo > 0) {
-                            if (blockMo) { blockMo.classList.remove('hidden'); blockMo.classList.add('flex'); }
-                            if (colonMo) colonMo.classList.remove('hidden');
-                            if (valMo) valMo.textContent = pad(rem.mo);
-                        } else {
-                            if (blockMo) { blockMo.classList.add('hidden'); blockMo.classList.remove('flex'); }
-                            if (colonMo) colonMo.classList.add('hidden');
-                        }
-                        
-                        // Update DOM with padded days
+                        // Pad the days to always have at least 2 digits
                         valD.textContent = pad(rem.d);
+                        valD.className = "text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-800 dark:text-gray-200";
                     }
                 });
             }
@@ -361,8 +315,6 @@
                 }
                 
                 saveData(); 
-                
-                // Show the strict Action Required view
                 triggerActionView();
             });
 
@@ -408,7 +360,8 @@
                 renderBanners();
             }
 
-            tickInterval = setInterval(tickTime, 1000);
+            // Check if days changed at midnight
+            tickInterval = setInterval(tickTime, 60000); 
         });
     </script>
 </body>
