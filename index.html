@@ -21,6 +21,13 @@
         
         .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Animation utilities */
+        .hover-pulse { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .group:hover .hover-pulse { transform: scale(1.05); }
+        
+        .hover-slide { transition: transform 0.3s ease; }
+        .group:hover .hover-slide { transform: translateX(4px); }
     </style>
 </head>
 <body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
@@ -240,59 +247,38 @@
 
                 events.forEach(ev => {
                     const row = document.createElement('div');
-                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.5rem] sm:h-20 transition-all duration-300 hover:shadow-md fade-in";
+                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.5rem] sm:h-20 transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left: Image-Inspired Modern Countdown UI -->
-                        <div class="flex-shrink-0 px-4 sm:px-6 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors">
-                            <div class="flex items-start gap-1 sm:gap-2 text-gray-900 dark:text-gray-100">
+                        <!-- Left: Minimalist Date Countdown UI -->
+                        <div class="flex-shrink-0 px-5 sm:px-8 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors group-hover:bg-gray-100 dark:group-hover:bg-[#252525]">
+                            <div class="flex items-start gap-1 sm:gap-2 text-gray-900 dark:text-gray-100 hover-pulse">
                                 
                                 <!-- Month (Hidden if 0) -->
                                 <div id="block-mo-${ev.id}" class="hidden flex-col items-center">
-                                    <span id="val-mo-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">mths</span>
+                                    <span id="val-mo-${ev.id}" class="text-3xl sm:text-4xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">mths</span>
                                 </div>
-                                <span id="colon-mo-${ev.id}" class="hidden text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
+                                <span id="colon-mo-${ev.id}" class="hidden text-3xl sm:text-4xl font-black leading-none relative -top-[2px] opacity-40 mx-1">:</span>
                                 
                                 <!-- Days -->
                                 <div class="flex flex-col items-center">
-                                    <span id="val-d-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">days</span>
-                                </div>
-                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
-                                
-                                <!-- Hours -->
-                                <div class="flex flex-col items-center">
-                                    <span id="val-h-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">hrs</span>
-                                </div>
-                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
-                                
-                                <!-- Mins -->
-                                <div class="flex flex-col items-center">
-                                    <span id="val-m-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">min</span>
-                                </div>
-                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
-                                
-                                <!-- Secs -->
-                                <div class="flex flex-col items-center">
-                                    <span id="val-s-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
-                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">sec</span>
+                                    <span id="val-d-${ev.id}" class="text-3xl sm:text-4xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">days</span>
                                 </div>
                                 
                             </div>
                         </div>
                         
-                        <!-- Right: Event Title -->
-                        <div class="flex-grow p-3 sm:p-4 flex items-center overflow-hidden">
-                            <span class="font-semibold text-[15px] sm:text-[17px] text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight">${ev.title}</span>
+                        <!-- Right: Event Title with Slide Animation -->
+                        <div class="flex-grow p-4 sm:p-5 flex items-center overflow-hidden bg-white dark:bg-[#191919] z-10">
+                            <span class="font-semibold text-base sm:text-lg text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight hover-slide">${ev.title}</span>
                         </div>
 
                         <!-- Hover Actions (Edit & Delete) -->
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none">✕</button>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✕</button>
                         </div>
                     `;
                     container.appendChild(row);
@@ -307,9 +293,6 @@
                     
                     const valMo = document.getElementById(`val-mo-${ev.id}`);
                     const valD = document.getElementById(`val-d-${ev.id}`);
-                    const valH = document.getElementById(`val-h-${ev.id}`);
-                    const valM = document.getElementById(`val-m-${ev.id}`);
-                    const valS = document.getElementById(`val-s-${ev.id}`);
                     
                     const blockMo = document.getElementById(`block-mo-${ev.id}`);
                     const colonMo = document.getElementById(`colon-mo-${ev.id}`);
@@ -319,9 +302,6 @@
                     if (rem.ended) {
                         if (valMo) valMo.textContent = "00";
                         valD.textContent = "00";
-                        valH.textContent = "00";
-                        valM.textContent = "00";
-                        valS.textContent = "00";
                         if (blockMo) { blockMo.classList.add('hidden'); blockMo.classList.remove('flex'); }
                         if (colonMo) colonMo.classList.add('hidden');
                     } else {
@@ -335,11 +315,8 @@
                             if (colonMo) colonMo.classList.add('hidden');
                         }
                         
-                        // Update DOM with padded numbers
+                        // Update DOM with padded days
                         valD.textContent = pad(rem.d);
-                        valH.textContent = pad(rem.h);
-                        valM.textContent = pad(rem.m);
-                        valS.textContent = pad(rem.s);
                     }
                 });
             }
