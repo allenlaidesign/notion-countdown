@@ -243,15 +243,48 @@
                     row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.5rem] sm:h-20 transition-all duration-300 hover:shadow-md fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left: Countdown Data (Widened for Month & Day Side-by-Side) -->
-                        <div class="flex-shrink-0 w-36 sm:w-44 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex flex-col items-center justify-center transition-colors">
-                            <div id="date-${ev.id}" class="flex items-baseline gap-1 justify-center whitespace-nowrap">
-                                <!-- JS will inject Months and Days here -->
+                        <!-- Left: Image-Inspired Modern Countdown UI -->
+                        <div class="flex-shrink-0 px-4 sm:px-6 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors">
+                            <div class="flex items-start gap-1 sm:gap-2 text-gray-900 dark:text-gray-100">
+                                
+                                <!-- Month (Hidden if 0) -->
+                                <div id="block-mo-${ev.id}" class="hidden flex-col items-center">
+                                    <span id="val-mo-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">mths</span>
+                                </div>
+                                <span id="colon-mo-${ev.id}" class="hidden text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
+                                
+                                <!-- Days -->
+                                <div class="flex flex-col items-center">
+                                    <span id="val-d-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">days</span>
+                                </div>
+                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
+                                
+                                <!-- Hours -->
+                                <div class="flex flex-col items-center">
+                                    <span id="val-h-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">hrs</span>
+                                </div>
+                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
+                                
+                                <!-- Mins -->
+                                <div class="flex flex-col items-center">
+                                    <span id="val-m-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">min</span>
+                                </div>
+                                <span class="text-xl sm:text-2xl md:text-3xl font-black leading-none relative -top-[1px] opacity-80">:</span>
+                                
+                                <!-- Secs -->
+                                <div class="flex flex-col items-center">
+                                    <span id="val-s-${ev.id}" class="text-xl sm:text-2xl md:text-3xl font-black tabular-nums tracking-tight leading-none">00</span>
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">sec</span>
+                                </div>
+                                
                             </div>
-                            <span id="time-${ev.id}" class="text-xs sm:text-[13px] font-semibold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">--:--:--</span>
                         </div>
                         
-                        <!-- Right: Event Title (Slightly larger & bold) -->
+                        <!-- Right: Event Title -->
                         <div class="flex-grow p-3 sm:p-4 flex items-center overflow-hidden">
                             <span class="font-semibold text-[15px] sm:text-[17px] text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight">${ev.title}</span>
                         </div>
@@ -270,28 +303,43 @@
 
             function tickTime() {
                 events.forEach(ev => {
-                    const dateEl = document.getElementById(`date-${ev.id}`);
-                    const timeEl = document.getElementById(`time-${ev.id}`);
-                    
-                    if (!dateEl || !timeEl) return;
-                    
                     const rem = getRemainingTime(ev.date);
                     
+                    const valMo = document.getElementById(`val-mo-${ev.id}`);
+                    const valD = document.getElementById(`val-d-${ev.id}`);
+                    const valH = document.getElementById(`val-h-${ev.id}`);
+                    const valM = document.getElementById(`val-m-${ev.id}`);
+                    const valS = document.getElementById(`val-s-${ev.id}`);
+                    
+                    const blockMo = document.getElementById(`block-mo-${ev.id}`);
+                    const colonMo = document.getElementById(`colon-mo-${ev.id}`);
+                    
+                    if (!valD) return;
+                    
                     if (rem.ended) {
-                        dateEl.innerHTML = `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-400 dark:text-gray-500">0</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">Days</span>`;
-                        timeEl.textContent = `00:00:00`;
+                        if (valMo) valMo.textContent = "00";
+                        valD.textContent = "00";
+                        valH.textContent = "00";
+                        valM.textContent = "00";
+                        valS.textContent = "00";
+                        if (blockMo) { blockMo.classList.add('hidden'); blockMo.classList.remove('flex'); }
+                        if (colonMo) colonMo.classList.add('hidden');
                     } else {
-                        // Month String (Hidden if 0)
-                        let moHtml = rem.mo > 0 ? `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-200">${rem.mo}</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">${rem.mo <= 1 ? 'Month' : 'Months'}</span>` : '';
+                        // Show/Hide Month Block Dynamically
+                        if (rem.mo > 0) {
+                            if (blockMo) { blockMo.classList.remove('hidden'); blockMo.classList.add('flex'); }
+                            if (colonMo) colonMo.classList.remove('hidden');
+                            if (valMo) valMo.textContent = pad(rem.mo);
+                        } else {
+                            if (blockMo) { blockMo.classList.add('hidden'); blockMo.classList.remove('flex'); }
+                            if (colonMo) colonMo.classList.add('hidden');
+                        }
                         
-                        // Day String
-                        let dayHtml = `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-200">${rem.d}</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">${rem.d <= 1 ? 'Day' : 'Days'}</span>`;
-                        
-                        // Combine side-by-side with a tiny gap if both exist
-                        dateEl.innerHTML = rem.mo > 0 ? `${moHtml} <span class="w-1.5 sm:w-2 inline-block"></span> ${dayHtml}` : dayHtml;
-                        
-                        // Time String
-                        timeEl.textContent = `${pad(rem.h)}:${pad(rem.m)}:${pad(rem.s)}`;
+                        // Update DOM with padded numbers
+                        valD.textContent = pad(rem.d);
+                        valH.textContent = pad(rem.h);
+                        valM.textContent = pad(rem.m);
+                        valS.textContent = pad(rem.s);
                     }
                 });
             }
