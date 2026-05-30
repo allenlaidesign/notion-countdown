@@ -19,113 +19,120 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* Entrance animation */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Hover animation for edit/delete buttons */
-        .hover-slide { transition: transform 0.3s ease; }
-        .group:hover .hover-slide { transform: translateX(4px); }
-
-        /* Continuous Idle Animation (Breathing Effect) */
-        .animate-breathe {
-            animation: breathe 4s ease-in-out infinite;
-            will-change: transform;
+        /* Flowing Divider Animation (Between Left and Right) */
+        .flowing-container {
+            width: 2px;
+            position: relative;
+            overflow: hidden;
+            background-color: #f3f4f6; /* gray-100 */
         }
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        .dark .flowing-container {
+            background-color: #262626; /* neutral-800 */
+        }
+        .flowing-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(to bottom, transparent, #3b82f6, transparent);
+            animation: slide-down 2s linear infinite;
+        }
+        .dark .flowing-bar {
+            background: linear-gradient(to bottom, transparent, #60a5fa, transparent);
+        }
+        @keyframes slide-down {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
         }
     </style>
 </head>
 <body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
 
-    <!-- Container for all Event Banners -->
+    <!-- Container for Events -->
     <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col">
-        <!-- Event rows will be injected here by JS -->
+        <!-- Banners go here -->
     </div>
 
-    <!-- Hover-to-Add Area -->
-    <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-2 relative group cursor-pointer" id="btn-add-new">
+    <!-- Add New Area (Hover to show) -->
+    <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-3 relative group cursor-pointer" id="btn-add-new">
         <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
         <button class="bg-gray-100 dark:bg-[#202020] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full p-2.5 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
     </div>
 
-    <!-- Settings & Add Modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4" style="display: none;">
-        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in overflow-hidden">
+    <!-- Fullscreen Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4">
+        
+        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden relative fade-in transition-all">
             
+            <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-                <h2 id="modal-title" class="text-lg font-semibold">Add New Event</h2>
-                <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 p-1 cursor-pointer">
+                <h2 id="modal-title" class="text-lg font-semibold">Add Event</h2>
+                <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 p-1 cursor-pointer transition-colors rounded">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
-            <!-- Main Input Area (Hidden when Action Required) -->
-            <div id="modal-main-view" class="flex flex-col w-full">
-                <div class="p-4 bg-gray-50 dark:bg-[#252525] rounded-b-xl border-b border-gray-200 dark:border-gray-800">
-                    <input type="hidden" id="edit-id" value="">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Event Title</label>
-                            <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Target Date (Midnight)</label>
-                            <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
-                        </div>
-                        <div class="flex gap-2 pt-2">
-                            <button id="btn-save" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer">Save Event</button>
-                            <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
-                        </div>
+            <!-- View 1: Edit/Add Form -->
+            <div id="view-form" class="p-5 bg-gray-50 dark:bg-[#252525]">
+                <input type="hidden" id="edit-id" value="">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Event Title</label>
+                        <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Date</label>
+                        <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
+                    </div>
+                    <div class="flex gap-2 pt-3">
+                        <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-gray-200 hover:bg-black dark:hover:bg-white text-white dark:text-black font-semibold py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer">Save Event</button>
+                        <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
                     </div>
                 </div>
-
-                <div class="flex-1 overflow-y-auto no-scrollbar p-4">
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Existing Events</h3>
-                    <ul id="event-list" class="space-y-2"></ul>
-                </div>
             </div>
 
-            <!-- Action Required View (Covers settings perfectly) -->
-            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#252525] w-full text-center min-h-[300px]">
-                <div class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
-                    <span class="text-2xl">⚠️</span>
+            <!-- View 2: Action Required (Copy Link) -->
+            <div id="view-action" class="hidden p-6 bg-blue-50 dark:bg-blue-900/20 text-center flex-col items-center justify-center">
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                 </div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Action Required to Save</h3>
-                <p class="text-[13px] text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                    Notion clears local data on refresh. You <strong>MUST</strong> copy this link and replace the old embed in Notion to permanently save your changes.
+                <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">⚠️ Action Required</h3>
+                <p class="text-xs text-blue-700 dark:text-blue-300 mb-5 leading-relaxed px-2">
+                    Your changes are ready! To prevent Notion from resetting your data, you must copy this new link and replace your existing embed.
                 </p>
                 
-                <div class="flex w-full gap-2 mb-8">
-                    <input type="text" id="embed-link" readonly class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-blue-200 dark:border-blue-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none shadow-inner">
-                    <button id="btn-copy-link" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-sm cursor-pointer transition-colors">Copy Link</button>
+                <input type="text" id="embed-link" readonly class="w-full px-3 py-2 text-center bg-white dark:bg-[#191919] border border-blue-200 dark:border-blue-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none shadow-inner mb-4">
+                
+                <div class="flex w-full gap-2">
+                    <button id="btn-copy-link" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md text-sm transition-colors shadow-md cursor-pointer flex justify-center items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        Copy Link
+                    </button>
+                    <button id="btn-done" class="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Done</button>
                 </div>
-
-                <button id="btn-back-to-main" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors cursor-pointer flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                    Back to Settings
-                </button>
             </div>
-            
+
         </div>
     </div>
 
-    <!-- Toast Message -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-[200]">
-        Notification
+        Copied!
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let events = [];
-            let tickInterval = null;
 
+            // --- Encoding/Decoding for URL State ---
             function encodeData(data) { return btoa(encodeURIComponent(JSON.stringify(data))); }
             function decodeData(str) { try { return JSON.parse(decodeURIComponent(atob(str))); } catch (e) { return null; } }
 
+            // Load Initial Data from URL
             const urlParams = new URLSearchParams(window.location.search);
             const urlData = urlParams.get('d');
             
@@ -134,88 +141,76 @@
                 if (decoded && Array.isArray(decoded)) events = decoded;
             } else {
                 try {
-                    const stored = localStorage.getItem('notion_countdown_events_v5');
+                    const stored = localStorage.getItem('notion_countdown_simple');
                     if (stored) events = JSON.parse(stored);
-                } catch (e) { console.warn("Storage blocked"); }
+                } catch (e) {}
             }
 
-            // DOM Variables
+            // DOM Elements
             const container = document.getElementById('events-container');
             const btnAddNew = document.getElementById('btn-add-new');
             const overlay = document.getElementById('modal-overlay');
             const btnClose = document.getElementById('btn-close-modal');
+            const viewForm = document.getElementById('view-form');
+            const viewAction = document.getElementById('view-action');
+            
+            const modalTitle = document.getElementById('modal-title');
             const inputTitle = document.getElementById('input-title');
             const inputDate = document.getElementById('input-date');
             const inputId = document.getElementById('edit-id');
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
-            const toast = document.getElementById('toast');
             
-            const modalMainView = document.getElementById('modal-main-view');
-            const modalActionView = document.getElementById('modal-action-view');
-            const btnBackToMain = document.getElementById('btn-back-to-main');
-
             const embedLinkInput = document.getElementById('embed-link');
             const btnCopyLink = document.getElementById('btn-copy-link');
-            const modalTitle = document.getElementById('modal-title');
+            const btnDone = document.getElementById('btn-done');
+            const toast = document.getElementById('toast');
 
-            const pad = (n) => n.toString().padStart(2, '0');
-
-            function getRemainingTime(targetStr) {
-                const now = new Date();
-                now.setHours(0, 0, 0, 0); // Force current time to midnight
-                const target = new Date(targetStr + 'T00:00:00'); // Force target to midnight
-                const diffMs = target.getTime() - now.getTime();
-
-                if (diffMs <= 0) return { d: 0, ended: true };
-
-                // Calculate total days left
-                const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-                return { d: days, ended: false };
+            // --- Logic ---
+            function calcDaysLeft(dateStr) {
+                const today = new Date(); today.setHours(0, 0, 0, 0); 
+                const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
+                return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
             }
 
             function showToast(msg) { 
                 toast.textContent = msg; 
                 toast.classList.remove('opacity-0', 'translate-y-4'); 
-                setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 2500); 
+                setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000); 
             }
 
-            function updateEmbedLink() {
+            function getEmbedLink() {
                 const baseUrl = window.location.origin + window.location.pathname;
-                const link = events.length > 0 ? `${baseUrl}?d=${encodeData(events)}` : baseUrl;
-                embedLinkInput.value = link;
+                return events.length > 0 ? `${baseUrl}?d=${encodeData(events)}` : baseUrl;
             }
 
-            function triggerActionView() {
-                updateEmbedLink();
-                modalMainView.classList.add('hidden');
-                modalActionView.classList.remove('hidden');
-                modalActionView.classList.add('fade-in');
+            function showActionRequired() {
+                modalTitle.textContent = "Almost Done!";
+                viewForm.classList.add('hidden');
+                viewAction.classList.remove('hidden');
+                viewAction.classList.add('flex');
+                embedLinkInput.value = getEmbedLink();
             }
 
-            function saveData() { 
-                if (!urlData) { 
-                    try { localStorage.setItem('notion_countdown_events_v5', JSON.stringify(events)); } catch (e) {}
-                }
-                renderBanners(); 
-            }
-
-            function resetForm() { 
+            function resetModal() {
                 inputTitle.value = ""; 
                 inputDate.value = ""; 
                 inputId.value = ""; 
-                modalTitle.textContent = "Add New Event";
+                modalTitle.textContent = "Add Event";
                 btnSave.textContent = "Save Event"; 
-                btnCancel.classList.add('hidden'); 
+                btnCancel.classList.add('hidden');
                 
-                modalMainView.classList.remove('hidden');
-                modalActionView.classList.add('hidden');
+                viewAction.classList.add('hidden');
+                viewAction.classList.remove('flex');
+                viewForm.classList.remove('hidden');
+            }
+
+            function sortEvents() {
+                // Sort by date ascending (closest date first)
+                events.sort((a, b) => new Date(a.date) - new Date(b.date));
             }
 
             function renderBanners() {
-                // Auto sort by date (closest events at the top)
-                events.sort((a, b) => new Date(a.date) - new Date(b.date));
-
                 container.innerHTML = '';
                 
                 if (events.length === 0) {
@@ -228,84 +223,97 @@
                 }
 
                 events.forEach(ev => {
+                    const days = calcDaysLeft(ev.date);
+                    let numDisplay = "", labelDisplay = "", colorClass = "";
+
+                    if (days > 0) {
+                        numDisplay = days;
+                        labelDisplay = days === 1 ? "Day" : "Days";
+                        colorClass = "text-gray-900 dark:text-white";
+                    } else if (days === 0) {
+                        numDisplay = "0";
+                        labelDisplay = "Today";
+                        colorClass = "text-green-600 dark:text-green-500";
+                    } else {
+                        numDisplay = Math.abs(days);
+                        labelDisplay = "Days Ago";
+                        colorClass = "text-gray-400 dark:text-gray-500";
+                    }
+
                     const row = document.createElement('div');
-                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-20 sm:h-24 transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 fade-in";
+                    // Removed fixed height, letting it pad naturally
+                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md fade-in min-h-[4rem]";
                     
                     row.innerHTML = `
-                        <!-- Left: Huge Continuous Breathing Days Countdown -->
-                        <div class="flex-shrink-0 px-6 sm:px-10 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center transition-colors group-hover:bg-gray-100 dark:group-hover:bg-[#252525]">
-                            <div class="flex flex-col items-center animate-breathe">
-                                <span id="val-d-${ev.id}" class="text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-800 dark:text-gray-200">00</span>
-                                <span class="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1.5">days</span>
+                        <!-- Left: Countdown Data (Smaller & Refined) -->
+                        <div class="flex-shrink-0 w-28 sm:w-32 bg-gray-50/40 dark:bg-[#202020]/40 p-3 flex items-center justify-center transition-colors">
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="text-2xl font-bold tabular-nums tracking-tight ${colorClass}">${numDisplay}</span>
+                                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-0.5">${labelDisplay}</span>
                             </div>
                         </div>
+
+                        <!-- NEW: Flowing Animated Divider -->
+                        <div class="flowing-container flex-shrink-0">
+                            <div class="flowing-bar"></div>
+                        </div>
                         
-                        <!-- Right: Event Title with slight slide on hover -->
-                        <div class="flex-grow p-4 sm:p-6 flex items-center overflow-hidden bg-white dark:bg-[#191919] z-10">
-                            <span class="font-semibold text-base sm:text-lg text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight hover-slide">${ev.title}</span>
+                        <!-- Right: Event Title -->
+                        <div class="flex-grow p-4 flex flex-col justify-center overflow-hidden relative">
+                            <span class="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 truncate pr-16">${ev.title}</span>
                         </div>
 
                         <!-- Hover Actions (Edit & Delete) -->
-                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
-                            <button data-action="edit" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none hover:scale-105 active:scale-95">✕</button>
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button data-action="edit" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none">✕</button>
                         </div>
                     `;
                     container.appendChild(row);
-                });
-
-                tickTime(); // Run once immediately
-            }
-
-            function tickTime() {
-                events.forEach(ev => {
-                    const rem = getRemainingTime(ev.date);
-                    const valD = document.getElementById(`val-d-${ev.id}`);
-                    
-                    if (!valD) return;
-                    
-                    if (rem.ended) {
-                        valD.textContent = "00";
-                        valD.className = "text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-300 dark:text-gray-600";
-                    } else {
-                        // Pad the days to always have at least 2 digits
-                        valD.textContent = pad(rem.d);
-                        valD.className = "text-4xl sm:text-5xl font-black tabular-nums tracking-tight leading-none text-gray-800 dark:text-gray-200";
-                    }
                 });
             }
 
             // --- Event Listeners ---
 
+            // Open Add Modal
             btnAddNew.addEventListener('click', () => { 
+                resetModal();
                 overlay.style.display = 'flex'; 
-                resetForm(); 
             });
 
-            btnClose.addEventListener('click', () => { overlay.style.display = 'none'; });
-            btnBackToMain.addEventListener('click', () => { resetForm(); });
-            
+            // Close Modal
+            const closeModal = () => { overlay.style.display = 'none'; };
+            btnClose.addEventListener('click', closeModal);
+            btnCancel.addEventListener('click', closeModal);
+            btnDone.addEventListener('click', closeModal);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+            // Copy Link Button in Action View
             btnCopyLink.addEventListener('click', () => {
                 embedLinkInput.select();
                 document.execCommand('copy');
-                btnCopyLink.textContent = "Copied!";
-                btnCopyLink.classList.replace('bg-blue-600', 'bg-green-600');
-                btnCopyLink.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
-                showToast("✅ Copied! Now replace the embed link in Notion.");
+                showToast("✅ Link Copied! Replace it in Notion.");
+                btnCopyLink.innerHTML = "Copied!";
+                btnCopyLink.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btnCopyLink.classList.add('bg-green-600', 'hover:bg-green-700');
                 
                 setTimeout(() => {
-                    btnCopyLink.textContent = "Copy Link";
-                    btnCopyLink.classList.replace('bg-green-600', 'bg-blue-600');
-                    btnCopyLink.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                    btnCopyLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy Link`;
+                    btnCopyLink.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    btnCopyLink.classList.remove('bg-green-600', 'hover:bg-green-700');
                 }, 2000);
             });
 
+            // Save / Edit Event
             btnSave.addEventListener('click', () => {
                 const title = inputTitle.value.trim();
                 const date = inputDate.value;
                 const editId = inputId.value;
 
-                if (!title || !date) return showToast("⚠️ Please enter a title and date!");
+                if (!title || !date) {
+                    showToast("⚠️ Please enter a title and date!");
+                    return;
+                }
                 
                 if (editId) { 
                     const idx = events.findIndex(e => e.id === editId); 
@@ -314,12 +322,17 @@
                     events.push({ id: Date.now().toString(), title, date }); 
                 }
                 
-                saveData(); 
-                triggerActionView();
+                sortEvents(); // Sort immediately after saving
+                
+                if (!urlData) {
+                    try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
+                }
+                
+                renderBanners();
+                showActionRequired(); // Show the copy link screen
             });
 
-            btnCancel.addEventListener('click', resetForm);
-
+            // Edit / Delete Actions via Event Delegation
             container.addEventListener('click', (e) => {
                 const btn = e.target.closest('button');
                 if (!btn) return;
@@ -330,6 +343,7 @@
                 if (action === 'edit') {
                     const ev = events.find(e => e.id === id);
                     if (ev) { 
+                        resetModal();
                         modalTitle.textContent = "Edit Event";
                         inputTitle.value = ev.title; 
                         inputDate.value = ev.date; 
@@ -340,28 +354,35 @@
                     }
                 } else if (action === 'delete') {
                     events = events.filter(e => e.id !== id); 
-                    saveData(); 
+                    if (!urlData) {
+                        try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
+                    }
+                    renderBanners(); 
                     
-                    // Force them to copy link after deleting too!
+                    // Show Action Required screen because link changed
                     overlay.style.display = 'flex';
-                    resetForm();
-                    modalTitle.textContent = "Event Deleted";
-                    triggerActionView();
+                    showActionRequired();
                 }
             });
 
             // --- Initialization ---
             if (events.length === 0 && !urlData) { 
                 const nextWeek = new Date(); 
-                nextWeek.setDate(nextWeek.getDate() + 7);
-                events.push({ id: 'demo1', title: 'Example Event (Please delete me)', date: nextWeek.toISOString().split('T')[0] }); 
-                saveData(); 
-            } else {
-                renderBanners();
+                nextWeek.setDate(nextWeek.getDate() + 14);
+                
+                events.push({ 
+                    id: 'demo1', 
+                    title: 'Trip to Tokyo', 
+                    date: nextWeek.toISOString().split('T')[0] 
+                }); 
+                
+                if (!urlData) {
+                    try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
+                }
             }
-
-            // Check if days changed at midnight
-            tickInterval = setInterval(tickTime, 60000); 
+            
+            sortEvents();
+            renderBanners();
         });
     </script>
 </body>
