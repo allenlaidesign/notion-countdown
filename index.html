@@ -21,79 +21,86 @@
         
         .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Attention shake for the copy link box */
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     </style>
 </head>
 <body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
 
+    <!-- Container for all Event Banners -->
     <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col">
-        <!-- Event rows will be injected here -->
+        <!-- Event rows will be injected here by JS -->
     </div>
 
-    <!-- Hover-to-Add Button -->
-    <div class="w-full max-w-2xl mt-3 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-2 relative group cursor-pointer" id="btn-add-new">
+    <!-- Hover-to-Add Area -->
+    <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-2 relative group cursor-pointer" id="btn-add-new">
         <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
-        <button class="bg-gray-50 dark:bg-[#202020] hover:bg-gray-100 dark:hover:bg-[#252525] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full p-2 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <button class="bg-gray-100 dark:bg-[#202020] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full p-2.5 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
     </div>
 
+    <!-- Settings & Add Modal -->
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4" style="display: none;">
-        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative overflow-hidden fade-in">
+        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in">
             
-            <!-- Main View (Form) -->
-            <div id="modal-main-view" class="flex flex-col w-full">
-                <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-                    <h2 id="modal-title" class="text-base font-semibold text-gray-800 dark:text-gray-100">Add New Event</h2>
-                    <button id="btn-close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 cursor-pointer transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
-                </div>
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                <h2 id="modal-title" class="text-lg font-semibold">Add New Event</h2>
+                <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 p-1 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
 
-                <div class="p-4 bg-gray-50/50 dark:bg-[#222222] rounded-b-xl border-b border-gray-100 dark:border-gray-800">
+            <!-- Main Input Area (Hidden when Action Required) -->
+            <div id="modal-main-view" class="flex flex-col w-full">
+                <div class="p-4 bg-gray-50 dark:bg-[#252525] rounded-b-xl border-b border-gray-200 dark:border-gray-800">
                     <input type="hidden" id="edit-id" value="">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Event Title</label>
-                            <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow">
+                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Event Title</label>
+                            <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Target Date</label>
-                            <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
+                            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Target Date (Midnight)</label>
+                            <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-medium py-2 px-4 rounded-md text-sm transition-colors cursor-pointer shadow-sm">Save</button>
-                            <button id="btn-cancel" class="hidden px-4 py-2 bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium transition-colors cursor-pointer">Cancel</button>
+                            <button id="btn-save" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer">Save Event</button>
+                            <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
                         </div>
                     </div>
                 </div>
+
+                <div class="flex-1 overflow-y-auto no-scrollbar p-4">
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Existing Events</h3>
+                    <ul id="event-list" class="space-y-2"></ul>
+                </div>
             </div>
 
-            <!-- Action View (Pop-up that covers the settings) -->
-            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-white dark:bg-[#1e1e1e] w-full text-center rounded-xl">
+            <!-- Action Required View (Covers settings perfectly) -->
+            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#252525] w-full text-center rounded-b-xl min-h-[300px]">
                 <div class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
                     <span class="text-2xl">⚠️</span>
                 </div>
                 <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Action Required to Save</h3>
-                <p class="text-[13px] text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">Notion clears data on refresh! You MUST copy this link and replace the old embed in Notion.</p>
+                <p class="text-[13px] text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                    Notion clears local data on refresh. You <strong>MUST</strong> copy this link and replace the old embed in Notion to permanently save your changes.
+                </p>
                 
-                <div class="flex w-full gap-2 mb-6">
-                    <input type="text" id="embed-link" readonly class="w-full px-3 py-2 bg-gray-50 dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none">
-                    <button id="btn-copy-link" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors shadow-sm cursor-pointer">Copy</button>
+                <div class="flex w-full gap-2 mb-8">
+                    <input type="text" id="embed-link" readonly class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-blue-200 dark:border-blue-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none shadow-inner">
+                    <button id="btn-copy-link" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium whitespace-nowrap shadow-sm cursor-pointer transition-colors">Copy Link</button>
                 </div>
 
                 <button id="btn-back-to-main" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors cursor-pointer flex items-center gap-1">
-                    <span>←</span> Back
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Back to Settings
                 </button>
             </div>
             
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 px-5 py-2.5 rounded-full text-sm font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-[200]">
+    <!-- Toast Message -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-[200]">
         Notification
     </div>
 
@@ -105,7 +112,6 @@
             function encodeData(data) { return btoa(encodeURIComponent(JSON.stringify(data))); }
             function decodeData(str) { try { return JSON.parse(decodeURIComponent(atob(str))); } catch (e) { return null; } }
 
-            // 1. Check URL for data (Highest Priority - Solves Notion refresh issue)
             const urlParams = new URLSearchParams(window.location.search);
             const urlData = urlParams.get('d');
             
@@ -113,11 +119,10 @@
                 const decoded = decodeData(urlData);
                 if (decoded && Array.isArray(decoded)) events = decoded;
             } else {
-                // 2. Fallback to LocalStorage (Works in normal browsers)
                 try {
                     const stored = localStorage.getItem('notion_countdown_events_v4');
                     if (stored) events = JSON.parse(stored);
-                } catch (e) { console.warn("Storage blocked by Notion iframe"); }
+                } catch (e) { console.warn("Storage blocked"); }
             }
 
             const container = document.getElementById('events-container');
@@ -141,6 +146,45 @@
 
             const pad = (n) => n.toString().padStart(2, '0');
 
+            // --- Advanced Calendar Logic for Exact Months & Days ---
+            function getRemainingTime(targetStr) {
+                const now = new Date();
+                const target = new Date(targetStr + 'T00:00:00');
+                const diffMs = target.getTime() - now.getTime();
+
+                if (diffMs <= 0) return { mo: 0, d: 0, h: 0, m: 0, s: 0, ended: true };
+
+                let d = new Date(now.getTime());
+                let mo = 0;
+
+                // Smartly add months one by one, checking if it overshoots the target
+                while (true) {
+                    let next = new Date(d.getTime());
+                    let currentMonth = next.getMonth();
+                    next.setMonth(currentMonth + 1);
+                    // Handle edge cases like Jan 31 + 1 month -> Mar 3. Force to Feb 28/29.
+                    if (next.getMonth() !== (currentMonth + 1) % 12) {
+                        next.setDate(0); 
+                    }
+                    
+                    if (next.getTime() <= target.getTime()) {
+                        mo++;
+                        d = next;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Calculate remaining days, hours, mins, secs from the leftover milliseconds
+                const remainderMs = target.getTime() - d.getTime();
+                const days = Math.floor(remainderMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((remainderMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((remainderMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((remainderMs % (1000 * 60)) / 1000);
+
+                return { mo, d: days, h, m, s, ended: false };
+            }
+
             function showToast(msg) { 
                 toast.textContent = msg; 
                 toast.classList.remove('opacity-0', 'translate-y-4'); 
@@ -153,29 +197,34 @@
                 embedLinkInput.value = link;
             }
 
-            function triggerSaveRequirement() {
+            function triggerActionView() {
                 updateEmbedLink();
                 modalMainView.classList.add('hidden');
                 modalActionView.classList.remove('hidden');
                 modalActionView.classList.add('fade-in');
             }
 
-            function saveDataLocally() {
-                if (!urlData) { // Save to local storage if running normally
+            function saveData() { 
+                if (!urlData) { 
                     try { localStorage.setItem('notion_countdown_events_v4', JSON.stringify(events)); } catch (e) {}
                 }
+                renderBanners(); 
             }
 
             function resetForm() { 
-                inputTitle.value = ""; inputDate.value = ""; inputId.value = ""; 
+                inputTitle.value = ""; 
+                inputDate.value = ""; 
+                inputId.value = ""; 
                 modalTitle.textContent = "Add New Event";
-                btnSave.textContent = "Save"; btnCancel.classList.add('hidden'); 
+                btnSave.textContent = "Save Event"; 
+                btnCancel.classList.add('hidden'); 
+                
                 modalMainView.classList.remove('hidden');
                 modalActionView.classList.add('hidden');
             }
 
             function renderBanners() {
-                // 自動將活動按日期先後排序（越近嘅排越上）
+                // Auto sort by date (closest events at the top)
                 events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
                 container.innerHTML = '';
@@ -183,7 +232,7 @@
                 if (events.length === 0) {
                     container.innerHTML = `
                         <div class="bg-white dark:bg-[#191919] border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center text-gray-500 text-sm fade-in">
-                            No events found. Hover below to add one!
+                            No events yet. Hover below to add one!
                         </div>
                     `;
                     return;
@@ -191,115 +240,93 @@
 
                 events.forEach(ev => {
                     const row = document.createElement('div');
-                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.25rem] transition-all duration-300 hover:shadow-md fade-in";
+                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.5rem] sm:h-20 transition-all duration-300 hover:shadow-md fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left Side: Adjusted width for perfect balance -->
-                        <div class="flex-shrink-0 w-28 sm:w-32 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 px-2 sm:px-3 flex items-center justify-center">
-                            <div id="countdown-val-${ev.id}" class="w-full">
-                                <!-- JS will inject the exact time here -->
+                        <!-- Left: Countdown Data (Widened for Month & Day Side-by-Side) -->
+                        <div class="flex-shrink-0 w-36 sm:w-44 bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex flex-col items-center justify-center transition-colors">
+                            <div id="date-${ev.id}" class="flex items-baseline gap-1 justify-center whitespace-nowrap">
+                                <!-- JS will inject Months and Days here -->
                             </div>
+                            <span id="time-${ev.id}" class="text-xs sm:text-[13px] font-semibold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">--:--:--</span>
                         </div>
                         
-                        <!-- Right: Event Title -->
+                        <!-- Right: Event Title (Slightly larger & bold) -->
                         <div class="flex-grow p-3 sm:p-4 flex items-center overflow-hidden">
-                            <span class="font-semibold text-[15px] sm:text-base text-gray-800 dark:text-gray-100 truncate pr-16">${ev.title}</span>
+                            <span class="font-semibold text-[15px] sm:text-[17px] text-gray-800 dark:text-gray-100 truncate pr-16 tracking-tight">${ev.title}</span>
                         </div>
 
-                        <!-- Hover Actions -->
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-400 hover:text-red-600 transition-colors">✕</button>
+                        <!-- Hover Actions (Edit & Delete) -->
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button data-action="edit" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-1.5 sm:p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none">✕</button>
                         </div>
                     `;
                     container.appendChild(row);
                 });
 
-                updateTicks(); // Run once immediately
+                tickTime(); // Run once immediately
             }
 
-            function updateTicks() {
-                const now = new Date().getTime();
-                
+            function tickTime() {
                 events.forEach(ev => {
-                    const el = document.getElementById(`countdown-val-${ev.id}`);
-                    if (!el) return;
-
-                    // Calculate target at 00:00:00 of the selected date
-                    const targetDate = new Date(ev.date + 'T00:00:00').getTime();
-                    const diff = targetDate - now;
-
-                    if (diff <= 0) {
-                        el.innerHTML = `
-                            <div class="flex flex-col items-center justify-center w-full opacity-60 text-green-600 dark:text-green-500">
-                                <div class="flex items-baseline gap-1">
-                                    <span class="text-xl sm:text-2xl font-bold tabular-nums">0</span>
-                                    <span class="text-[10px] sm:text-xs font-medium">Today</span>
-                                </div>
-                                <div class="text-[11px] sm:text-[12px] font-bold tabular-nums tracking-widest mt-0.5">
-                                    00:00:00
-                                </div>
-                            </div>
-                        `;
-                        return;
+                    const dateEl = document.getElementById(`date-${ev.id}`);
+                    const timeEl = document.getElementById(`time-${ev.id}`);
+                    
+                    if (!dateEl || !timeEl) return;
+                    
+                    const rem = getRemainingTime(ev.date);
+                    
+                    if (rem.ended) {
+                        dateEl.innerHTML = `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-400 dark:text-gray-500">0</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">Days</span>`;
+                        timeEl.textContent = `00:00:00`;
+                    } else {
+                        // Month String (Hidden if 0)
+                        let moHtml = rem.mo > 0 ? `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-200">${rem.mo}</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">${rem.mo <= 1 ? 'Month' : 'Months'}</span>` : '';
+                        
+                        // Day String
+                        let dayHtml = `<span class="text-xl sm:text-2xl font-bold tabular-nums text-gray-800 dark:text-gray-200">${rem.d}</span> <span class="text-[10px] sm:text-xs font-medium text-gray-500">${rem.d <= 1 ? 'Day' : 'Days'}</span>`;
+                        
+                        // Combine side-by-side with a tiny gap if both exist
+                        dateEl.innerHTML = rem.mo > 0 ? `${moHtml} <span class="w-1.5 sm:w-2 inline-block"></span> ${dayHtml}` : dayHtml;
+                        
+                        // Time String
+                        timeEl.textContent = `${pad(rem.h)}:${pad(rem.m)}:${pad(rem.s)}`;
                     }
-
-                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-                    const dLabel = d <= 1 ? 'Day' : 'Days';
-
-                    // Stacked elegant layout to fill vertical space perfectly
-                    el.innerHTML = `
-                        <div class="flex flex-col items-center justify-center w-full">
-                            <div class="flex items-baseline gap-1 text-gray-800 dark:text-gray-200">
-                                <span class="text-xl sm:text-2xl font-bold tabular-nums tracking-tight">${d}</span>
-                                <span class="text-[11px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
-                            </div>
-                            <div class="text-[11px] sm:text-[12px] font-bold tabular-nums tracking-widest text-gray-400 dark:text-gray-500 mt-0.5">
-                                ${pad(h)}:${pad(m)}:${pad(s)}
-                            </div>
-                        </div>
-                    `;
                 });
             }
 
-            // Add New Button
+            // --- Event Listeners ---
+
             btnAddNew.addEventListener('click', () => { 
                 overlay.style.display = 'flex'; 
                 resetForm(); 
             });
 
             btnClose.addEventListener('click', () => { overlay.style.display = 'none'; });
-            btnCancel.addEventListener('click', () => { overlay.style.display = 'none'; });
+            btnBackToMain.addEventListener('click', () => { resetForm(); });
             
-            btnBackToMain.addEventListener('click', () => {
-                overlay.style.display = 'none';
-                resetForm();
-            });
-
-            // Copy Link
             btnCopyLink.addEventListener('click', () => {
                 embedLinkInput.select();
                 document.execCommand('copy');
                 btnCopyLink.textContent = "Copied!";
-                btnCopyLink.classList.replace('bg-yellow-500', 'bg-green-500');
-                showToast("✅ Copied! Now replace the Notion embed link.");
+                btnCopyLink.classList.replace('bg-blue-600', 'bg-green-600');
+                btnCopyLink.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+                showToast("✅ Copied! Now replace the embed link in Notion.");
+                
                 setTimeout(() => {
-                    btnCopyLink.textContent = "Copy";
-                    btnCopyLink.classList.replace('bg-green-500', 'bg-yellow-500');
+                    btnCopyLink.textContent = "Copy Link";
+                    btnCopyLink.classList.replace('bg-green-600', 'bg-blue-600');
+                    btnCopyLink.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
                 }, 2000);
             });
 
-            // Save Action
             btnSave.addEventListener('click', () => {
                 const title = inputTitle.value.trim();
                 const date = inputDate.value;
                 const editId = inputId.value;
 
-                if (!title || !date) return showToast("⚠️ Title and date are required!");
+                if (!title || !date) return showToast("⚠️ Please enter a title and date!");
                 
                 if (editId) { 
                     const idx = events.findIndex(e => e.id === editId); 
@@ -308,14 +335,14 @@
                     events.push({ id: Date.now().toString(), title, date }); 
                 }
                 
-                saveDataLocally();
-                renderBanners();
+                saveData(); 
                 
-                // Show the copy link alert instead of closing
-                triggerSaveRequirement();
+                // Show the strict Action Required view
+                triggerActionView();
             });
 
-            // Edit / Delete (Delegated)
+            btnCancel.addEventListener('click', resetForm);
+
             container.addEventListener('click', (e) => {
                 const btn = e.target.closest('button');
                 if (!btn) return;
@@ -330,35 +357,33 @@
                         inputTitle.value = ev.title; 
                         inputDate.value = ev.date; 
                         inputId.value = ev.id; 
-                        btnSave.textContent = "Update"; 
+                        btnSave.textContent = "Save Changes"; 
                         btnCancel.classList.remove('hidden'); 
                         overlay.style.display = 'flex';
                     }
                 } else if (action === 'delete') {
                     events = events.filter(e => e.id !== id); 
-                    saveDataLocally();
-                    renderBanners();
+                    saveData(); 
                     
-                    // Force them to copy new link after deleting
+                    // Force them to copy link after deleting too!
                     overlay.style.display = 'flex';
                     resetForm();
                     modalTitle.textContent = "Event Deleted";
-                    triggerSaveRequirement();
+                    triggerActionView();
                 }
             });
 
+            // --- Initialization ---
             if (events.length === 0 && !urlData) { 
                 const nextWeek = new Date(); 
                 nextWeek.setDate(nextWeek.getDate() + 7);
-                // Format YYYY-MM-DD
-                const dateStr = nextWeek.toISOString().split('T')[0];
-                events.push({ id: 'demo1', title: 'Example Event (Delete Me)', date: dateStr }); 
-                saveDataLocally(); 
+                events.push({ id: 'demo1', title: 'Example Event (Please delete me)', date: nextWeek.toISOString().split('T')[0] }); 
+                saveData(); 
+            } else {
+                renderBanners();
             }
-            
-            renderBanners();
-            // Update every minute is enough since we only show minutes, but running every 1s is fine too for precision
-            tickInterval = setInterval(updateTicks, 1000); 
+
+            tickInterval = setInterval(tickTime, 1000);
         });
     </script>
 </body>
