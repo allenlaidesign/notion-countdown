@@ -42,44 +42,54 @@
     </div>
 
     <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4" style="display: none;">
-        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative fade-in">
+        <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] relative overflow-hidden fade-in">
             
-            <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-                <h2 id="modal-title" class="text-base font-semibold text-gray-800 dark:text-gray-100">Add New Event</h2>
-                <button id="btn-close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 cursor-pointer transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <!-- Main View (Form) -->
+            <div id="modal-main-view" class="flex flex-col w-full">
+                <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+                    <h2 id="modal-title" class="text-base font-semibold text-gray-800 dark:text-gray-100">Add New Event</h2>
+                    <button id="btn-close-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 cursor-pointer transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+
+                <div class="p-4 bg-gray-50/50 dark:bg-[#222222] rounded-b-xl border-b border-gray-100 dark:border-gray-800">
+                    <input type="hidden" id="edit-id" value="">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Event Title</label>
+                            <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Target Date</label>
+                            <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-medium py-2 px-4 rounded-md text-sm transition-colors cursor-pointer shadow-sm">Save</button>
+                            <button id="btn-cancel" class="hidden px-4 py-2 bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium transition-colors cursor-pointer">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action View (Pop-up that covers the settings) -->
+            <div id="modal-action-view" class="hidden flex-col items-center justify-center p-8 bg-white dark:bg-[#1e1e1e] w-full text-center rounded-xl">
+                <div class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
+                    <span class="text-2xl">⚠️</span>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Action Required to Save</h3>
+                <p class="text-[13px] text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">Notion clears data on refresh! You MUST copy this link and replace the old embed in Notion.</p>
+                
+                <div class="flex w-full gap-2 mb-6">
+                    <input type="text" id="embed-link" readonly class="w-full px-3 py-2 bg-gray-50 dark:bg-[#141414] border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none">
+                    <button id="btn-copy-link" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors shadow-sm cursor-pointer">Copy</button>
+                </div>
+
+                <button id="btn-back-to-main" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors cursor-pointer flex items-center gap-1">
+                    <span>←</span> Back
                 </button>
             </div>
-
-            <div class="p-4 bg-gray-50/50 dark:bg-[#222222] rounded-b-xl border-b border-gray-100 dark:border-gray-800">
-                <input type="hidden" id="edit-id" value="">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Event Title</label>
-                        <input type="text" id="input-title" placeholder="e.g., Trip to Tokyo" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">Target Date</label>
-                        <!-- Date only, English localization -->
-                        <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
-                    </div>
-                    <div class="flex gap-2 pt-2">
-                        <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 font-medium py-2 px-4 rounded-md text-sm transition-colors cursor-pointer shadow-sm">Save</button>
-                        <button id="btn-cancel" class="hidden px-4 py-2 bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] text-gray-700 dark:text-gray-200 rounded-md text-sm font-medium transition-colors cursor-pointer">Cancel</button>
-                    </div>
-                </div>
-
-                <div id="copy-alert" class="mt-5 p-3.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-lg hidden">
-                    <label class="block text-[11px] font-bold text-yellow-800 dark:text-yellow-400 mb-1.5 uppercase tracking-wide">⚠️ Action Required to Save</label>
-                    <p class="text-[11px] text-yellow-700 dark:text-yellow-500 mb-2 leading-relaxed">
-                        Notion clears data on refresh! You MUST copy this link and replace the old embed in Notion.
-                    </p>
-                    <div class="flex gap-2">
-                        <input type="text" id="embed-link" readonly class="w-full px-2.5 py-1.5 bg-white dark:bg-[#191919] border border-yellow-300 dark:border-yellow-700/50 rounded text-xs text-gray-600 dark:text-gray-400 focus:outline-none">
-                        <button id="btn-copy-link" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap shadow-sm cursor-pointer transition-colors">Copy</button>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 
@@ -121,7 +131,10 @@
             const btnCancel = document.getElementById('btn-cancel');
             const toast = document.getElementById('toast');
             
-            const copyAlert = document.getElementById('copy-alert');
+            const modalMainView = document.getElementById('modal-main-view');
+            const modalActionView = document.getElementById('modal-action-view');
+            const btnBackToMain = document.getElementById('btn-back-to-main');
+
             const embedLinkInput = document.getElementById('embed-link');
             const btnCopyLink = document.getElementById('btn-copy-link');
             const modalTitle = document.getElementById('modal-title');
@@ -142,9 +155,9 @@
 
             function triggerSaveRequirement() {
                 updateEmbedLink();
-                copyAlert.classList.remove('hidden');
-                copyAlert.classList.add('shake');
-                setTimeout(() => copyAlert.classList.remove('shake'), 500);
+                modalMainView.classList.add('hidden');
+                modalActionView.classList.remove('hidden');
+                modalActionView.classList.add('fade-in');
             }
 
             function saveDataLocally() {
@@ -157,7 +170,8 @@
                 inputTitle.value = ""; inputDate.value = ""; inputId.value = ""; 
                 modalTitle.textContent = "Add New Event";
                 btnSave.textContent = "Save"; btnCancel.classList.add('hidden'); 
-                copyAlert.classList.add('hidden');
+                modalMainView.classList.remove('hidden');
+                modalActionView.classList.add('hidden');
             }
 
             function renderBanners() {
@@ -177,8 +191,8 @@
                     row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden h-[4.25rem] transition-all duration-300 hover:shadow-md fade-in";
                     
                     row.innerHTML = `
-                        <!-- Left: Uniform Size Countdown Data (Days, Hrs, Mins) -->
-                        <div class="flex-shrink-0 w-[170px] sm:w-[210px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 p-2 flex items-center justify-center">
+                        <!-- WIDER Left Side: Adjusted from w-170px to w-230px -->
+                        <div class="flex-shrink-0 w-[230px] sm:w-[270px] bg-gray-50 dark:bg-[#202020] border-r border-gray-200 dark:border-gray-800 px-2 sm:px-3 flex items-center justify-center">
                             <div id="countdown-val-${ev.id}" class="w-full">
                                 <!-- JS will inject the exact time here -->
                             </div>
@@ -231,11 +245,12 @@
                     const hLabel = h <= 1 ? 'Hour' : 'Hours';
                     const mLabel = m <= 1 ? 'Min' : 'Mins';
 
+                    // Adjusted layout gap to fit the wider container beautifully
                     el.innerHTML = `
-                        <div class="flex flex-wrap justify-center items-baseline gap-x-1 text-gray-800 dark:text-gray-200">
-                            <span class="text-base sm:text-lg font-bold tabular-nums">${d}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
-                            <span class="text-base sm:text-lg font-bold tabular-nums ml-1 sm:ml-1.5">${pad(h)}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${hLabel}</span>
-                            <span class="text-base sm:text-lg font-bold tabular-nums ml-1 sm:ml-1.5">${pad(m)}</span><span class="text-[10px] sm:text-xs font-medium text-gray-500">${mLabel}</span>
+                        <div class="flex flex-wrap justify-center items-baseline gap-x-1.5 sm:gap-x-2 text-gray-800 dark:text-gray-200">
+                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight">${d}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${dLabel}</span>
+                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight ml-1">${pad(h)}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${hLabel}</span>
+                            <span class="text-base sm:text-lg font-bold tabular-nums tracking-tight ml-1">${pad(m)}</span><span class="text-[11px] sm:text-xs font-medium text-gray-500">${mLabel}</span>
                         </div>
                     `;
                 });
@@ -250,6 +265,11 @@
             btnClose.addEventListener('click', () => { overlay.style.display = 'none'; });
             btnCancel.addEventListener('click', () => { overlay.style.display = 'none'; });
             
+            btnBackToMain.addEventListener('click', () => {
+                overlay.style.display = 'none';
+                resetForm();
+            });
+
             // Copy Link
             btnCopyLink.addEventListener('click', () => {
                 embedLinkInput.select();
