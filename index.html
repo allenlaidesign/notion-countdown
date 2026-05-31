@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Countdown</title>
+    <title>Notion Countdown Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             darkMode: 'media', 
@@ -19,43 +20,44 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Entrance animation */
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Flowing Divider Animation (Between Left and Right) */
-        .flowing-container {
+        /* 呼吸動畫 */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-breathe {
+            animation: breathe 3.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        /* 藍色流動光線動畫 */
+        .flowing-line {
             width: 2px;
-            position: relative;
-            overflow: hidden;
-            background-color: #f3f4f6; /* gray-100 */
-        }
-        .dark .flowing-container {
-            background-color: #262626; /* neutral-800 */
-        }
-        .flowing-bar {
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 100%;
+            height: 100%;
             background: linear-gradient(to bottom, transparent, #3b82f6, transparent);
-            animation: slide-down 2s linear infinite;
+            background-size: 100% 200%;
+            animation: flowDown 1.5s linear infinite;
+            opacity: 0.7;
         }
-        .dark .flowing-bar {
-            background: linear-gradient(to bottom, transparent, #60a5fa, transparent);
-        }
-        @keyframes slide-down {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
+        @keyframes flowDown {
+            0% { background-position: 0 -100%; }
+            100% { background-position: 0 100%; }
         }
     </style>
 </head>
-<body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar">
+<body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar relative">
 
-    <!-- Container for Events -->
-    <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col">
-        <!-- Banners go here -->
+    <div id="global-loading" class="fixed inset-0 bg-white/80 dark:bg-[#191919]/80 backdrop-blur-sm z-[200] flex flex-col items-center justify-center transition-opacity">
+        <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <span class="text-sm font-medium text-gray-500">Connecting to Cloud...</span>
     </div>
 
-    <!-- Add New Area (Hover to show) -->
+    <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col">
+        </div>
+
     <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-3 relative group cursor-pointer" id="btn-add-new">
         <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
         <button class="bg-gray-100 dark:bg-[#202020] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full p-2.5 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
@@ -63,12 +65,9 @@
         </button>
     </div>
 
-    <!-- Fullscreen Modal Overlay -->
     <div id="modal-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4">
-        
         <div class="bg-white dark:bg-[#1e1e1e] w-full max-w-md rounded-xl shadow-2xl flex flex-col overflow-hidden relative fade-in transition-all">
             
-            <!-- Header -->
             <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
                 <h2 id="modal-title" class="text-lg font-semibold">Add Event</h2>
                 <button id="btn-close-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 p-1 cursor-pointer transition-colors rounded">
@@ -76,9 +75,10 @@
                 </button>
             </div>
 
-            <!-- View 1: Edit/Add Form -->
-            <div id="view-form" class="p-5 bg-gray-50 dark:bg-[#252525]">
+            <div class="p-5 bg-gray-50 dark:bg-[#252525]">
                 <input type="hidden" id="edit-id" value="">
+                <input type="hidden" id="current-bg" value="">
+                
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Event Title</label>
@@ -88,85 +88,52 @@
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Date</label>
                         <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Background Image (Optional)</label>
+                        <input type="file" id="input-image" accept="image/*" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-xs text-gray-500 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    </div>
+                    
                     <div class="flex gap-2 pt-3">
-                        <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-gray-200 hover:bg-black dark:hover:bg-white text-white dark:text-black font-semibold py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer">Save Event</button>
+                        <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-gray-200 hover:bg-black dark:hover:bg-white text-white dark:text-black font-semibold py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer flex justify-center items-center gap-2">Save Event</button>
                         <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
                     </div>
                 </div>
             </div>
-
-            <!-- View 2: Action Required (Copy Link) -->
-            <div id="view-action" class="hidden p-6 bg-blue-50 dark:bg-blue-900/20 text-center flex-col items-center justify-center">
-                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">⚠️ Action Required</h3>
-                <p class="text-xs text-blue-700 dark:text-blue-300 mb-5 leading-relaxed px-2">
-                    Your changes are ready! To prevent Notion from resetting your data, you must copy this new link and replace your existing embed.
-                </p>
-                
-                <input type="text" id="embed-link" readonly class="w-full px-3 py-2 text-center bg-white dark:bg-[#191919] border border-blue-200 dark:border-blue-700 rounded-md text-xs text-gray-600 dark:text-gray-400 focus:outline-none shadow-inner mb-4">
-                
-                <div class="flex w-full gap-2">
-                    <button id="btn-copy-link" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md text-sm transition-colors shadow-md cursor-pointer flex justify-center items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                        Copy Link
-                    </button>
-                    <button id="btn-done" class="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Done</button>
-                </div>
-            </div>
-
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-xl transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-[200]">
-        Copied!
+        Saved!
     </div>
 
     <script>
+        // Supabase 初始化 (使用你嘅 API Keys)
+        const supabaseUrl = 'https://umizdhuywxoeyeymmmqf.supabase.co';
+        const supabaseKey = 'sb_publishable_ASDhJjynsmY1Hz9mAERzxg_EsvUaRpL';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         document.addEventListener('DOMContentLoaded', () => {
             let events = [];
-
-            // --- Encoding/Decoding for URL State ---
-            function encodeData(data) { return btoa(encodeURIComponent(JSON.stringify(data))); }
-            function decodeData(str) { try { return JSON.parse(decodeURIComponent(atob(str))); } catch (e) { return null; } }
-
-            // Load Initial Data from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlData = urlParams.get('d');
-            
-            if (urlData) {
-                const decoded = decodeData(urlData);
-                if (decoded && Array.isArray(decoded)) events = decoded;
-            } else {
-                try {
-                    const stored = localStorage.getItem('notion_countdown_simple');
-                    if (stored) events = JSON.parse(stored);
-                } catch (e) {}
-            }
 
             // DOM Elements
             const container = document.getElementById('events-container');
             const btnAddNew = document.getElementById('btn-add-new');
             const overlay = document.getElementById('modal-overlay');
             const btnClose = document.getElementById('btn-close-modal');
-            const viewForm = document.getElementById('view-form');
-            const viewAction = document.getElementById('view-action');
-            
             const modalTitle = document.getElementById('modal-title');
+            
             const inputTitle = document.getElementById('input-title');
             const inputDate = document.getElementById('input-date');
+            const inputImage = document.getElementById('input-image');
             const inputId = document.getElementById('edit-id');
+            const inputCurrentBg = document.getElementById('current-bg');
+            
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
-            
-            const embedLinkInput = document.getElementById('embed-link');
-            const btnCopyLink = document.getElementById('btn-copy-link');
-            const btnDone = document.getElementById('btn-done');
             const toast = document.getElementById('toast');
+            const globalLoading = document.getElementById('global-loading');
 
-            // --- Logic ---
+            // --- 邏輯功能 ---
             function calcDaysLeft(dateStr) {
                 const today = new Date(); today.setHours(0, 0, 0, 0); 
                 const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
@@ -179,44 +146,44 @@
                 setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000); 
             }
 
-            function getEmbedLink() {
-                const baseUrl = window.location.origin + window.location.pathname;
-                return events.length > 0 ? `${baseUrl}?d=${encodeData(events)}` : baseUrl;
-            }
-
-            function showActionRequired() {
-                modalTitle.textContent = "Almost Done!";
-                viewForm.classList.add('hidden');
-                viewAction.classList.remove('hidden');
-                viewAction.classList.add('flex');
-                embedLinkInput.value = getEmbedLink();
-            }
-
             function resetModal() {
                 inputTitle.value = ""; 
                 inputDate.value = ""; 
+                inputImage.value = "";
                 inputId.value = ""; 
-                modalTitle.textContent = "Add Event";
-                btnSave.textContent = "Save Event"; 
-                btnCancel.classList.add('hidden');
+                inputCurrentBg.value = "";
                 
-                viewAction.classList.add('hidden');
-                viewAction.classList.remove('flex');
-                viewForm.classList.remove('hidden');
+                modalTitle.textContent = "Add Event";
+                btnSave.innerHTML = "Save Event"; 
+                btnSave.disabled = false;
+                btnCancel.classList.add('hidden');
             }
 
-            function sortEvents() {
-                // Sort by date ascending (closest date first)
-                events.sort((a, b) => new Date(a.date) - new Date(b.date));
+            // --- 資料庫操作 (CRUD) ---
+            async function fetchEvents() {
+                const { data, error } = await supabase.from('events').select('*');
+                
+                if (error) {
+                    console.error("Error fetching data:", error);
+                    showToast("⚠️ Error connecting to database.");
+                } else {
+                    events = data || [];
+                    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    renderBanners();
+                }
+                
+                // 隱藏全螢幕 Loading
+                globalLoading.classList.add('opacity-0', 'pointer-events-none');
             }
 
+            // --- UI 渲染 ---
             function renderBanners() {
                 container.innerHTML = '';
                 
                 if (events.length === 0) {
                     container.innerHTML = `
                         <div class="bg-white dark:bg-[#191919] border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center text-gray-500 text-sm fade-in">
-                            No events yet. Hover below to add one!
+                            No events yet. Click below to add your first one!
                         </div>
                     `;
                     return;
@@ -229,44 +196,55 @@
                     if (days > 0) {
                         numDisplay = days;
                         labelDisplay = days === 1 ? "Day" : "Days";
-                        colorClass = "text-gray-900 dark:text-white";
+                        colorClass = ev.bg_url ? "text-white" : "text-gray-900 dark:text-white";
                     } else if (days === 0) {
                         numDisplay = "0";
                         labelDisplay = "Today";
-                        colorClass = "text-green-600 dark:text-green-500";
+                        colorClass = ev.bg_url ? "text-green-300" : "text-green-600 dark:text-green-500";
                     } else {
                         numDisplay = Math.abs(days);
                         labelDisplay = "Days Ago";
-                        colorClass = "text-gray-400 dark:text-gray-500";
+                        colorClass = ev.bg_url ? "text-gray-300" : "text-gray-400 dark:text-gray-500";
                     }
 
                     const row = document.createElement('div');
-                    // Removed fixed height, letting it pad naturally
+                    
+                    // 如果有背景圖，設定 CSS Background
+                    let bgStyle = "";
+                    let innerContainerClass = "bg-gray-50/50 dark:bg-[#202020]/50";
+                    let titleColorClass = "text-gray-800 dark:text-gray-200";
+                    let labelColorClass = "text-gray-500 dark:text-gray-400";
+                    
+                    if (ev.bg_url) {
+                        // 加深背景遮罩，令白字清楚
+                        bgStyle = `background-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%), url('${ev.bg_url}'); background-size: cover; background-position: center;`;
+                        innerContainerClass = "bg-transparent"; 
+                        titleColorClass = "text-white drop-shadow-md";
+                        labelColorClass = "text-gray-300";
+                    }
+
                     row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md fade-in min-h-[4rem]";
+                    row.style = bgStyle;
                     
                     row.innerHTML = `
-                        <!-- Left: Countdown Data (Smaller & Refined) -->
-                        <div class="flex-shrink-0 w-28 sm:w-32 bg-gray-50/40 dark:bg-[#202020]/40 p-3 flex items-center justify-center transition-colors">
-                            <div class="flex items-baseline gap-1.5">
-                                <span class="text-2xl font-bold tabular-nums tracking-tight ${colorClass}">${numDisplay}</span>
-                                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-0.5">${labelDisplay}</span>
+                        <div class="flex-shrink-0 w-28 sm:w-36 ${innerContainerClass} ${ev.bg_url ? '' : 'border-r border-gray-200 dark:border-gray-800'} p-3 flex items-center justify-center transition-colors relative z-10">
+                            <div class="flex items-baseline gap-1.5 animate-breathe">
+                                <span class="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight ${colorClass}">${numDisplay}</span>
+                                <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-widest ${labelColorClass} mb-1">${labelDisplay}</span>
                             </div>
                         </div>
-
-                        <!-- NEW: Flowing Animated Divider -->
-                        <div class="flowing-container flex-shrink-0">
-                            <div class="flowing-bar"></div>
+                        
+                        <div class="flex-shrink-0 relative z-10 flex items-center h-full">
+                            <div class="flowing-line"></div>
                         </div>
                         
-                        <!-- Right: Event Title -->
-                        <div class="flex-grow p-4 flex flex-col justify-center overflow-hidden relative">
-                            <span class="font-medium text-sm sm:text-base text-gray-800 dark:text-gray-200 truncate pr-16">${ev.title}</span>
+                        <div class="flex-grow p-4 flex flex-col justify-center overflow-hidden relative z-10">
+                            <span class="font-semibold text-base sm:text-lg ${titleColorClass} truncate pr-16">${ev.title}</span>
                         </div>
 
-                        <!-- Hover Actions (Edit & Delete) -->
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <button data-action="edit" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors focus:outline-none">✎</button>
-                            <button data-action="delete" data-id="${ev.id}" class="p-2 bg-white dark:bg-[#252525] shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer transition-colors focus:outline-none">✕</button>
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+                            <button data-action="edit" data-id="${ev.id}" class="p-2 bg-white/90 dark:bg-[#252525]/90 backdrop-blur shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/50 cursor-pointer transition-colors focus:outline-none">✎</button>
+                            <button data-action="delete" data-id="${ev.id}" class="p-2 bg-white/90 dark:bg-[#252525]/90 backdrop-blur shadow-sm border border-gray-200 dark:border-gray-700 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 cursor-pointer transition-colors focus:outline-none">✕</button>
                         </div>
                     `;
                     container.appendChild(row);
@@ -274,66 +252,74 @@
             }
 
             // --- Event Listeners ---
-
-            // Open Add Modal
             btnAddNew.addEventListener('click', () => { 
                 resetModal();
                 overlay.style.display = 'flex'; 
             });
 
-            // Close Modal
             const closeModal = () => { overlay.style.display = 'none'; };
             btnClose.addEventListener('click', closeModal);
             btnCancel.addEventListener('click', closeModal);
-            btnDone.addEventListener('click', closeModal);
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
-            // Copy Link Button in Action View
-            btnCopyLink.addEventListener('click', () => {
-                embedLinkInput.select();
-                document.execCommand('copy');
-                showToast("✅ Link Copied! Replace it in Notion.");
-                btnCopyLink.innerHTML = "Copied!";
-                btnCopyLink.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                btnCopyLink.classList.add('bg-green-600', 'hover:bg-green-700');
-                
-                setTimeout(() => {
-                    btnCopyLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy Link`;
-                    btnCopyLink.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    btnCopyLink.classList.remove('bg-green-600', 'hover:bg-green-700');
-                }, 2000);
-            });
-
-            // Save / Edit Event
-            btnSave.addEventListener('click', () => {
+            // 儲存事件 (包含圖片上傳邏輯)
+            btnSave.addEventListener('click', async () => {
                 const title = inputTitle.value.trim();
                 const date = inputDate.value;
+                const file = inputImage.files[0];
                 const editId = inputId.value;
+                let finalBgUrl = inputCurrentBg.value; // 如果冇揀新圖，保留舊圖
 
                 if (!title || !date) {
-                    showToast("⚠️ Please enter a title and date!");
-                    return;
+                    return showToast("⚠️ Please enter a title and date!");
+                }
+
+                // UI 變成 Loading 狀態
+                btnSave.disabled = true;
+                btnSave.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white dark:text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...`;
+                
+                // 處理圖片上傳
+                if (file) {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('backgrounds')
+                        .upload(fileName, file);
+
+                    if (uploadError) {
+                        console.error("Upload error:", uploadError);
+                        showToast("⚠️ Image upload failed.");
+                    } else {
+                        const { data: publicUrlData } = supabase.storage.from('backgrounds').getPublicUrl(fileName);
+                        finalBgUrl = publicUrlData.publicUrl;
+                    }
+                }
+
+                const eventData = {
+                    id: editId || Date.now().toString(),
+                    title: title,
+                    date: date,
+                    bg_url: finalBgUrl || null
+                };
+
+                // 寫入 Supabase 資料庫
+                const { error: dbError } = await supabase.from('events').upsert([eventData]);
+
+                if (dbError) {
+                    console.error("DB error:", dbError);
+                    showToast("⚠️ Failed to save event.");
+                } else {
+                    showToast("✅ Event saved successfully!");
+                    closeModal();
+                    fetchEvents(); // 重新向雲端攞資料更新畫面
                 }
                 
-                if (editId) { 
-                    const idx = events.findIndex(e => e.id === editId); 
-                    if (idx !== -1) events[idx] = { id: editId, title, date }; 
-                } else { 
-                    events.push({ id: Date.now().toString(), title, date }); 
-                }
-                
-                sortEvents(); // Sort immediately after saving
-                
-                if (!urlData) {
-                    try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
-                }
-                
-                renderBanners();
-                showActionRequired(); // Show the copy link screen
+                btnSave.disabled = false;
             });
 
-            // Edit / Delete Actions via Event Delegation
-            container.addEventListener('click', (e) => {
+            // 編輯/刪除操作
+            container.addEventListener('click', async (e) => {
                 const btn = e.target.closest('button');
                 if (!btn) return;
                 
@@ -348,41 +334,26 @@
                         inputTitle.value = ev.title; 
                         inputDate.value = ev.date; 
                         inputId.value = ev.id; 
+                        inputCurrentBg.value = ev.bg_url || ""; // 記住現有嘅相
                         btnSave.textContent = "Save Changes"; 
                         btnCancel.classList.remove('hidden'); 
                         overlay.style.display = 'flex';
                     }
                 } else if (action === 'delete') {
-                    events = events.filter(e => e.id !== id); 
-                    if (!urlData) {
-                        try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
+                    if(confirm("Are you sure you want to delete this event?")) {
+                        const { error } = await supabase.from('events').delete().eq('id', id);
+                        if(error) {
+                            showToast("⚠️ Failed to delete event.");
+                        } else {
+                            showToast("✅ Event deleted.");
+                            fetchEvents();
+                        }
                     }
-                    renderBanners(); 
-                    
-                    // Show Action Required screen because link changed
-                    overlay.style.display = 'flex';
-                    showActionRequired();
                 }
             });
 
-            // --- Initialization ---
-            if (events.length === 0 && !urlData) { 
-                const nextWeek = new Date(); 
-                nextWeek.setDate(nextWeek.getDate() + 14);
-                
-                events.push({ 
-                    id: 'demo1', 
-                    title: 'Trip to Tokyo', 
-                    date: nextWeek.toISOString().split('T')[0] 
-                }); 
-                
-                if (!urlData) {
-                    try { localStorage.setItem('notion_countdown_simple', JSON.stringify(events)); } catch(e){}
-                }
-            }
-            
-            sortEvents();
-            renderBanners();
+            // 啟動時自動讀取雲端資料
+            fetchEvents();
         });
     </script>
 </body>
