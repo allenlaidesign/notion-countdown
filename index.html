@@ -72,12 +72,23 @@
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Date</label>
                         <input type="date" id="input-date" lang="en-US" class="w-full px-3 py-2.5 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow [color-scheme:light] dark:[color-scheme:dark]">
                     </div>
+                    
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Background Image (Optional)</label>
+                        
+                        <!-- 新增：目前圖片保留狀態顯示 (Edit 時出現) -->
+                        <div id="current-image-preview" class="hidden items-center justify-between p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800 mb-2">
+                            <span class="text-xs text-blue-700 dark:text-blue-300 font-medium flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                Current image kept
+                            </span>
+                            <button type="button" id="btn-remove-image" class="text-xs text-red-500 hover:text-red-700 font-semibold px-2.5 py-1 bg-white dark:bg-[#1e1e1e] rounded shadow-sm border border-red-200 dark:border-red-800 transition-colors">Remove</button>
+                        </div>
+
                         <input type="file" id="input-image" accept="image/*" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-xs text-gray-500 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                     </div>
                     
-                    <!-- 新增：圖片位置選擇器 (預設隱藏) -->
+                    <!-- 圖片位置選擇器 -->
                     <div id="image-pos-container" class="hidden">
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Image Position / Focus</label>
                         <select id="input-bg-pos" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
@@ -119,13 +130,15 @@
             const inputCurrentBg = document.getElementById('current-bg');
             const inputBgPos = document.getElementById('input-bg-pos');
             const imagePosContainer = document.getElementById('image-pos-container');
+            const currentImagePreview = document.getElementById('current-image-preview');
+            const btnRemoveImage = document.getElementById('btn-remove-image');
             
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
             const toast = document.getElementById('toast');
             const globalLoading = document.getElementById('global-loading');
 
-            // --- 極限防卡死系統 (專為沙盒預覽而設) ---
+            // --- 極限防卡死系統 ---
             const sandboxTimeout = setTimeout(() => {
                 if (!globalLoading.classList.contains('opacity-0')) {
                     isPreviewSandbox = true;
@@ -134,7 +147,6 @@
                     
                     const demoDate = new Date(); demoDate.setDate(demoDate.getDate() + 14);
                     events = [
-                        // 加入 #top 去示範位置功能
                         { id: 'demo1', title: 'Japan Trip (Demo - Top Focus)', date: demoDate.toISOString().split('T')[0], bg_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop#top' },
                         { id: 'demo2', title: 'Product Launch', date: new Date().toISOString().split('T')[0], bg_url: '' }
                     ];
@@ -152,13 +164,32 @@
                 console.warn("Supabase init blocked by sandbox.");
             }
 
-            // 監聽圖片上傳，如果有圖就顯示位置選項
+            // --- Helper: 從 URL 抽取出 File Name 用作刪除 ---
+            function getFileNameFromUrl(url) {
+                if (!url) return null;
+                const cleanUrl = url.split('#')[0]; // 去走 #top 果啲
+                const parts = cleanUrl.split('/');
+                return parts[parts.length - 1];
+            }
+
+            // 監聽圖片上傳
             inputImage.addEventListener('change', function() {
                 if (this.files.length > 0) {
                     imagePosContainer.classList.remove('hidden');
+                    currentImagePreview.classList.add('hidden');
+                    currentImagePreview.classList.remove('flex');
                 } else if (!inputCurrentBg.value) {
                     imagePosContainer.classList.add('hidden');
                 }
+            });
+
+            // 移除現有圖片按鈕
+            btnRemoveImage.addEventListener('click', () => {
+                inputCurrentBg.value = ""; // 清空舊圖紀錄
+                inputImage.value = ""; // 清空上傳區
+                currentImagePreview.classList.add('hidden');
+                currentImagePreview.classList.remove('flex');
+                imagePosContainer.classList.add('hidden');
             });
 
             function calcDaysLeft(dateStr) {
@@ -176,7 +207,12 @@
             function resetModal() {
                 inputTitle.value = ""; inputDate.value = ""; inputImage.value = ""; 
                 inputId.value = ""; inputCurrentBg.value = ""; inputBgPos.value = "center";
+                inputImage.dataset.originalBg = ""; // Reset original image track
+                
                 imagePosContainer.classList.add('hidden');
+                currentImagePreview.classList.add('hidden');
+                currentImagePreview.classList.remove('flex');
+                
                 modalTitle.textContent = "Add Event"; btnSave.innerHTML = "Save Event"; 
                 btnSave.disabled = false; btnCancel.classList.add('hidden');
             }
@@ -217,10 +253,8 @@
                     let bgStyle = "", innerContainerClass = "bg-gray-50/50 dark:bg-[#202020]/50", titleColorClass = "text-gray-800 dark:text-gray-200", labelColorClass = "text-gray-500 dark:text-gray-400";
                     
                     if (ev.bg_url) {
-                        // 處理圖片位置 Hash (#top, #center, #bottom)
                         let actualUrl = ev.bg_url.split('#')[0];
                         let pos = ev.bg_url.split('#')[1] || 'center';
-                        
                         bgStyle = `background-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%), url('${actualUrl}'); background-size: cover; background-position: center ${pos};`;
                         innerContainerClass = "bg-transparent"; titleColorClass = "text-white drop-shadow-md"; labelColorClass = "text-gray-300";
                     }
@@ -247,12 +281,15 @@
             btnClose.addEventListener('click', closeModal); btnCancel.addEventListener('click', closeModal);
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
+            // 儲存邏輯 (包含執垃圾功能)
             btnSave.addEventListener('click', async () => {
                 if (isPreviewSandbox) return showToast("⚠️ 預覽模式無法儲存。請將 Code 放上 GitHub 測試！");
 
                 const title = inputTitle.value.trim(); const date = inputDate.value; const file = inputImage.files[0];
-                const editId = inputId.value; let finalBgUrl = inputCurrentBg.value;
+                const editId = inputId.value; 
+                let finalBgUrl = inputCurrentBg.value;
                 const pos = inputBgPos.value;
+                const originalBgUrl = inputImage.dataset.originalBg || "";
 
                 if (!title || !date) return showToast("⚠️ Please enter a title and date!");
 
@@ -260,6 +297,7 @@
                 btnSave.innerHTML = `Saving...`;
                 
                 try {
+                    // 1. 如果有新相，Upload 新相
                     if (file) {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -269,11 +307,24 @@
                         finalBgUrl = publicUrlData.publicUrl;
                     }
                     
-                    // 組合位置資訊到 URL 尾部
+                    // 2. 組合位置資訊到 URL 尾部
                     if (finalBgUrl) {
                         finalBgUrl = finalBgUrl.split('#')[0] + '#' + pos;
                     }
 
+                    // 3. 自動執垃圾 (如果換咗新相，或者移除了舊相)
+                    const cleanOriginal = originalBgUrl.split('#')[0];
+                    const cleanFinal = finalBgUrl ? finalBgUrl.split('#')[0] : "";
+                    
+                    if (cleanOriginal && cleanOriginal !== cleanFinal) {
+                        const oldFileName = getFileNameFromUrl(cleanOriginal);
+                        if (oldFileName) {
+                            await supabase.storage.from('backgrounds').remove([oldFileName]);
+                            console.log("Deleted old unused image from storage.");
+                        }
+                    }
+
+                    // 4. 更新 Database
                     const eventData = { id: editId || Date.now().toString(), title: title, date: date, bg_url: finalBgUrl || null };
                     const { error: dbError } = await supabase.from('events').upsert([eventData]);
                     
@@ -303,7 +354,6 @@
                         inputDate.value = ev.date; 
                         inputId.value = ev.id; 
                         
-                        // 分拆 URL 同位置資訊
                         let currentBg = ev.bg_url || "";
                         let pos = "center";
                         if (currentBg.includes('#')) {
@@ -313,15 +363,29 @@
                         
                         inputCurrentBg.value = currentBg; 
                         inputBgPos.value = pos;
+                        inputImage.dataset.originalBg = ev.bg_url || ""; // 記錄入去 Modal 前嘅舊圖
                         
                         if (currentBg) {
                             imagePosContainer.classList.remove('hidden');
+                            currentImagePreview.classList.remove('hidden');
+                            currentImagePreview.classList.add('flex');
                         }
                         
                         btnSave.textContent = "Save Changes"; btnCancel.classList.remove('hidden'); overlay.style.display = 'flex';
                     }
                 } else if (action === 'delete' && confirm("Delete this event?")) {
                     if (isPreviewSandbox) return showToast("⚠️ 預覽模式無法刪除。");
+                    
+                    // 刪除活動時，連帶刪除 Storage 嘅圖片 (執垃圾)
+                    const ev = events.find(e => e.id === id);
+                    if (ev && ev.bg_url) {
+                        const oldFileName = getFileNameFromUrl(ev.bg_url);
+                        if (oldFileName) {
+                            await supabase.storage.from('backgrounds').remove([oldFileName]);
+                        }
+                    }
+
+                    // 刪除 Database 記錄
                     const { error } = await supabase.from('events').delete().eq('id', id);
                     if(error) showToast("⚠️ Failed to delete."); else { showToast("✅ Event deleted."); fetchEvents(); }
                 }
