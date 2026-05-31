@@ -76,6 +76,17 @@
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Background Image (Optional)</label>
                         <input type="file" id="input-image" accept="image/*" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-xs text-gray-500 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                     </div>
+                    
+                    <!-- 新增：圖片位置選擇器 (預設隱藏) -->
+                    <div id="image-pos-container" class="hidden">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Image Position / Focus</label>
+                        <select id="input-bg-pos" class="w-full px-3 py-2 bg-white dark:bg-[#191919] border border-gray-300 dark:border-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow">
+                            <option value="center">Center (Default)</option>
+                            <option value="top">Top (Show upper part)</option>
+                            <option value="bottom">Bottom (Show lower part)</option>
+                        </select>
+                    </div>
+
                     <div class="flex gap-2 pt-3">
                         <button id="btn-save" class="flex-1 bg-gray-900 dark:bg-gray-200 hover:bg-black dark:hover:bg-white text-white dark:text-black font-semibold py-2.5 px-4 rounded-md text-sm transition-colors shadow-sm cursor-pointer flex justify-center items-center gap-2">Save Event</button>
                         <button id="btn-cancel" class="hidden px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer">Cancel</button>
@@ -106,6 +117,8 @@
             const inputImage = document.getElementById('input-image');
             const inputId = document.getElementById('edit-id');
             const inputCurrentBg = document.getElementById('current-bg');
+            const inputBgPos = document.getElementById('input-bg-pos');
+            const imagePosContainer = document.getElementById('image-pos-container');
             
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
@@ -113,24 +126,22 @@
             const globalLoading = document.getElementById('global-loading');
 
             // --- 極限防卡死系統 (專為沙盒預覽而設) ---
-            // 如果 1.5 秒內讀取唔到 Supabase，強制切換去 Demo Mode，保證見到畫面！
             const sandboxTimeout = setTimeout(() => {
                 if (!globalLoading.classList.contains('opacity-0')) {
                     isPreviewSandbox = true;
                     globalLoading.classList.add('opacity-0', 'pointer-events-none');
-                    showToast("⚠️ 沙盒預覽模式：雲端連線被封鎖。顯示 Demo 數據。");
+                    showToast("⚠️ 沙盒預覽模式：顯示 Demo 數據。");
                     
-                    // 塞入 Demo 資料俾你預覽排版
                     const demoDate = new Date(); demoDate.setDate(demoDate.getDate() + 14);
                     events = [
-                        { id: 'demo1', title: 'Japan Trip (Demo)', date: demoDate.toISOString().split('T')[0], bg_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop' },
+                        // 加入 #top 去示範位置功能
+                        { id: 'demo1', title: 'Japan Trip (Demo - Top Focus)', date: demoDate.toISOString().split('T')[0], bg_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop#top' },
                         { id: 'demo2', title: 'Product Launch', date: new Date().toISOString().split('T')[0], bg_url: '' }
                     ];
                     renderBanners();
                 }
             }, 1500);
 
-            // 嘗試初始化 Supabase
             try {
                 if (typeof window.supabase !== 'undefined') {
                     const supabaseUrl = 'https://umizdhuywxoeyeymmmqf.supabase.co';
@@ -140,6 +151,15 @@
             } catch (e) {
                 console.warn("Supabase init blocked by sandbox.");
             }
+
+            // 監聽圖片上傳，如果有圖就顯示位置選項
+            inputImage.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    imagePosContainer.classList.remove('hidden');
+                } else if (!inputCurrentBg.value) {
+                    imagePosContainer.classList.add('hidden');
+                }
+            });
 
             function calcDaysLeft(dateStr) {
                 const today = new Date(); today.setHours(0, 0, 0, 0); 
@@ -154,26 +174,25 @@
             }
 
             function resetModal() {
-                inputTitle.value = ""; inputDate.value = ""; inputImage.value = ""; inputId.value = ""; inputCurrentBg.value = "";
+                inputTitle.value = ""; inputDate.value = ""; inputImage.value = ""; 
+                inputId.value = ""; inputCurrentBg.value = ""; inputBgPos.value = "center";
+                imagePosContainer.classList.add('hidden');
                 modalTitle.textContent = "Add Event"; btnSave.innerHTML = "Save Event"; 
                 btnSave.disabled = false; btnCancel.classList.add('hidden');
             }
 
             async function fetchEvents() {
-                if (!supabase) return; // 如果被 Block，等 Timeout 機制接手
+                if (!supabase) return; 
                 try {
                     const { data, error } = await supabase.from('events').select('*');
-                    clearTimeout(sandboxTimeout); // 成功連線，取消 Demo Mode
-                    
+                    clearTimeout(sandboxTimeout);
                     if (error) throw error;
-                    
                     events = data || [];
                     events.sort((a, b) => new Date(a.date) - new Date(b.date));
                     renderBanners();
                     globalLoading.classList.add('opacity-0', 'pointer-events-none');
                 } catch (err) {
                     console.error("Fetch error:", err);
-                    // 交俾 timeout 機制處理
                 }
             }
 
@@ -198,7 +217,11 @@
                     let bgStyle = "", innerContainerClass = "bg-gray-50/50 dark:bg-[#202020]/50", titleColorClass = "text-gray-800 dark:text-gray-200", labelColorClass = "text-gray-500 dark:text-gray-400";
                     
                     if (ev.bg_url) {
-                        bgStyle = `background-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%), url('${ev.bg_url}'); background-size: cover; background-position: center;`;
+                        // 處理圖片位置 Hash (#top, #center, #bottom)
+                        let actualUrl = ev.bg_url.split('#')[0];
+                        let pos = ev.bg_url.split('#')[1] || 'center';
+                        
+                        bgStyle = `background-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.2) 100%), url('${actualUrl}'); background-size: cover; background-position: center ${pos};`;
                         innerContainerClass = "bg-transparent"; titleColorClass = "text-white drop-shadow-md"; labelColorClass = "text-gray-300";
                     }
 
@@ -229,6 +252,7 @@
 
                 const title = inputTitle.value.trim(); const date = inputDate.value; const file = inputImage.files[0];
                 const editId = inputId.value; let finalBgUrl = inputCurrentBg.value;
+                const pos = inputBgPos.value;
 
                 if (!title || !date) return showToast("⚠️ Please enter a title and date!");
 
@@ -244,6 +268,12 @@
                         const { data: publicUrlData } = supabase.storage.from('backgrounds').getPublicUrl(fileName);
                         finalBgUrl = publicUrlData.publicUrl;
                     }
+                    
+                    // 組合位置資訊到 URL 尾部
+                    if (finalBgUrl) {
+                        finalBgUrl = finalBgUrl.split('#')[0] + '#' + pos;
+                    }
+
                     const eventData = { id: editId || Date.now().toString(), title: title, date: date, bg_url: finalBgUrl || null };
                     const { error: dbError } = await supabase.from('events').upsert([eventData]);
                     
@@ -267,8 +297,27 @@
                 if (action === 'edit') {
                     const ev = events.find(e => e.id === id);
                     if (ev) { 
-                        resetModal(); modalTitle.textContent = "Edit Event"; inputTitle.value = ev.title; 
-                        inputDate.value = ev.date; inputId.value = ev.id; inputCurrentBg.value = ev.bg_url || ""; 
+                        resetModal(); 
+                        modalTitle.textContent = "Edit Event"; 
+                        inputTitle.value = ev.title; 
+                        inputDate.value = ev.date; 
+                        inputId.value = ev.id; 
+                        
+                        // 分拆 URL 同位置資訊
+                        let currentBg = ev.bg_url || "";
+                        let pos = "center";
+                        if (currentBg.includes('#')) {
+                            pos = currentBg.split('#')[1];
+                            currentBg = currentBg.split('#')[0];
+                        }
+                        
+                        inputCurrentBg.value = currentBg; 
+                        inputBgPos.value = pos;
+                        
+                        if (currentBg) {
+                            imagePosContainer.classList.remove('hidden');
+                        }
+                        
                         btnSave.textContent = "Save Changes"; btnCancel.classList.remove('hidden'); overlay.style.display = 'flex';
                     }
                 } else if (action === 'delete' && confirm("Delete this event?")) {
