@@ -23,6 +23,8 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .animate-breathe { animation: breathe 3.5s ease-in-out infinite; display: inline-block; }
+        
+        /* 藍色流動光線動畫 */
         .flowing-line {
             width: 2px; height: 100%;
             background: linear-gradient(to bottom, transparent, #3b82f6, transparent);
@@ -35,9 +37,9 @@
 <body class="bg-transparent text-gray-800 dark:text-gray-200 antialiased min-h-screen w-full flex flex-col items-center p-2 sm:p-4 m-0 overflow-y-auto no-scrollbar relative">
 
     <!-- 全螢幕 Loading -->
-    <div id="global-loading" class="fixed inset-0 bg-white/80 dark:bg-[#191919]/80 backdrop-blur-sm z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
+    <div id="global-loading" class="fixed inset-0 bg-white/80 dark:bg-[#191919]/80 backdrop-blur-sm z-[200] flex flex-col items-center justify-center transition-opacity duration-300">
         <svg class="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <span class="text-sm font-medium text-gray-500">Connecting to Cloud...</span>
+        <span class="text-sm font-medium text-gray-500" id="loading-text">Connecting to Cloud...</span>
     </div>
 
     <div id="events-container" class="w-full max-w-2xl space-y-3 flex flex-col"></div>
@@ -88,12 +90,11 @@
     </div>
 
     <script>
-        const supabaseUrl = 'https://umizdhuywxoeyeymmmqf.supabase.co';
-        const supabaseKey = 'sb_publishable_ASDhJjynsmY1Hz9mAERzxg_EsvUaRpL';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
         document.addEventListener('DOMContentLoaded', () => {
             let events = [];
+            let isPreviewSandbox = false;
+            let supabase = null;
+            
             const container = document.getElementById('events-container');
             const btnAddNew = document.getElementById('btn-add-new');
             const overlay = document.getElementById('modal-overlay');
@@ -110,6 +111,35 @@
             const btnCancel = document.getElementById('btn-cancel');
             const toast = document.getElementById('toast');
             const globalLoading = document.getElementById('global-loading');
+
+            // --- 極限防卡死系統 (專為沙盒預覽而設) ---
+            // 如果 1.5 秒內讀取唔到 Supabase，強制切換去 Demo Mode，保證見到畫面！
+            const sandboxTimeout = setTimeout(() => {
+                if (!globalLoading.classList.contains('opacity-0')) {
+                    isPreviewSandbox = true;
+                    globalLoading.classList.add('opacity-0', 'pointer-events-none');
+                    showToast("⚠️ 沙盒預覽模式：雲端連線被封鎖。顯示 Demo 數據。");
+                    
+                    // 塞入 Demo 資料俾你預覽排版
+                    const demoDate = new Date(); demoDate.setDate(demoDate.getDate() + 14);
+                    events = [
+                        { id: 'demo1', title: 'Japan Trip (Demo)', date: demoDate.toISOString().split('T')[0], bg_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop' },
+                        { id: 'demo2', title: 'Product Launch', date: new Date().toISOString().split('T')[0], bg_url: '' }
+                    ];
+                    renderBanners();
+                }
+            }, 1500);
+
+            // 嘗試初始化 Supabase
+            try {
+                if (typeof window.supabase !== 'undefined') {
+                    const supabaseUrl = 'https://umizdhuywxoeyeymmmqf.supabase.co';
+                    const supabaseKey = 'sb_publishable_ASDhJjynsmY1Hz9mAERzxg_EsvUaRpL';
+                    supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                }
+            } catch (e) {
+                console.warn("Supabase init blocked by sandbox.");
+            }
 
             function calcDaysLeft(dateStr) {
                 const today = new Date(); today.setHours(0, 0, 0, 0); 
@@ -129,37 +159,21 @@
                 btnSave.disabled = false; btnCancel.classList.add('hidden');
             }
 
-            // --- 5秒防卡死機制 ---
-            const fallbackTimer = setTimeout(() => {
-                if (!globalLoading.classList.contains('opacity-0')) {
-                    globalLoading.classList.add('opacity-0', 'pointer-events-none');
-                    showToast("⚠️ 預覽環境受限 (連線逾時)。請直接放上 GitHub / Notion 測試！");
-                }
-            }, 5000);
-
             async function fetchEvents() {
+                if (!supabase) return; // 如果被 Block，等 Timeout 機制接手
                 try {
                     const { data, error } = await supabase.from('events').select('*');
+                    clearTimeout(sandboxTimeout); // 成功連線，取消 Demo Mode
                     
-                    clearTimeout(fallbackTimer); // 如果成功連線，取消 5 秒倒數
-
-                    if (error) {
-                        console.error("Supabase Error:", error);
-                        if(error.code === '42P01') {
-                            showToast("⚠️ 錯誤: 資料庫 Table 'events' 未建立！");
-                        } else {
-                            showToast(`⚠️ 連線錯誤: ${error.message}`);
-                        }
-                    } else {
-                        events = data || [];
-                        events.sort((a, b) => new Date(a.date) - new Date(b.date));
-                        renderBanners();
-                    }
-                } catch (err) {
-                    console.error("Network Error:", err);
-                    // 唔顯示 Error 等防卡死機制去處理
-                } finally {
+                    if (error) throw error;
+                    
+                    events = data || [];
+                    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    renderBanners();
                     globalLoading.classList.add('opacity-0', 'pointer-events-none');
+                } catch (err) {
+                    console.error("Fetch error:", err);
+                    // 交俾 timeout 機制處理
                 }
             }
 
@@ -211,34 +225,36 @@
             overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
             btnSave.addEventListener('click', async () => {
+                if (isPreviewSandbox) return showToast("⚠️ 預覽模式無法儲存。請將 Code 放上 GitHub 測試！");
+
                 const title = inputTitle.value.trim(); const date = inputDate.value; const file = inputImage.files[0];
                 const editId = inputId.value; let finalBgUrl = inputCurrentBg.value;
 
                 if (!title || !date) return showToast("⚠️ Please enter a title and date!");
 
                 btnSave.disabled = true;
-                btnSave.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white dark:text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...`;
+                btnSave.innerHTML = `Saving...`;
                 
                 try {
                     if (file) {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
                         const { data: uploadData, error: uploadError } = await supabase.storage.from('backgrounds').upload(fileName, file);
-                        if (uploadError) throw new Error("Image upload failed: " + uploadError.message);
+                        if (uploadError) throw uploadError;
                         const { data: publicUrlData } = supabase.storage.from('backgrounds').getPublicUrl(fileName);
                         finalBgUrl = publicUrlData.publicUrl;
                     }
                     const eventData = { id: editId || Date.now().toString(), title: title, date: date, bg_url: finalBgUrl || null };
                     const { error: dbError } = await supabase.from('events').upsert([eventData]);
                     
-                    if (dbError) throw new Error(dbError.message);
+                    if (dbError) throw dbError;
                     
                     showToast("✅ Event saved!");
                     closeModal();
                     fetchEvents();
                 } catch (err) {
                     console.error(err);
-                    showToast("⚠️ " + err.message);
+                    showToast("⚠️ Error: " + err.message);
                     btnSave.disabled = false;
                     btnSave.innerHTML = "Save Event";
                 }
@@ -256,8 +272,9 @@
                         btnSave.textContent = "Save Changes"; btnCancel.classList.remove('hidden'); overlay.style.display = 'flex';
                     }
                 } else if (action === 'delete' && confirm("Delete this event?")) {
+                    if (isPreviewSandbox) return showToast("⚠️ 預覽模式無法刪除。");
                     const { error } = await supabase.from('events').delete().eq('id', id);
-                    if(error) showToast("⚠️ Failed to delete event."); else { showToast("✅ Event deleted."); fetchEvents(); }
+                    if(error) showToast("⚠️ Failed to delete."); else { showToast("✅ Event deleted."); fetchEvents(); }
                 }
             });
 
