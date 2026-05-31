@@ -46,7 +46,7 @@
 
     <div class="w-full max-w-2xl mt-2 opacity-0 hover:opacity-100 transition-opacity duration-300 flex justify-center py-3 relative group cursor-pointer" id="btn-add-new">
         <div class="absolute inset-0 border-2 border-dashed border-transparent group-hover:border-gray-300 dark:group-hover:border-gray-700 rounded-lg pointer-events-none transition-colors duration-300"></div>
-        <button class="bg-gray-100 dark:bg-[#202020] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-full p-2.5 shadow-sm transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
+        <button class="bg-transparent hover:bg-gray-100 dark:hover:bg-[#202020] text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full p-2.5 transition-colors border border-gray-200 dark:border-gray-700 pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
     </div>
@@ -236,7 +236,7 @@
                 container.innerHTML = '';
                 if (events.length === 0) {
                     container.innerHTML = `
-                        <div class="bg-white dark:bg-[#191919] border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center text-gray-500 text-sm fade-in">
+                        <div class="bg-transparent border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center text-gray-500 text-sm fade-in">
                             No events yet. Click below to add your first one!
                         </div>
                     `;
@@ -250,7 +250,7 @@
                     else { numDisplay = Math.abs(days); labelDisplay = "Days Ago"; colorClass = ev.bg_url ? "text-gray-300" : "text-gray-400 dark:text-gray-500"; }
 
                     const row = document.createElement('div');
-                    let bgStyle = "", innerContainerClass = "bg-gray-50/50 dark:bg-[#202020]/50", titleColorClass = "text-gray-800 dark:text-gray-200", labelColorClass = "text-gray-500 dark:text-gray-400";
+                    let bgStyle = "", innerContainerClass = "bg-transparent", titleColorClass = "text-gray-800 dark:text-gray-200", labelColorClass = "text-gray-500 dark:text-gray-400";
                     
                     if (ev.bg_url) {
                         let actualUrl = ev.bg_url.split('#')[0];
@@ -259,7 +259,7 @@
                         innerContainerClass = "bg-transparent"; titleColorClass = "text-white drop-shadow-md"; labelColorClass = "text-gray-300";
                     }
 
-                    row.className = "group relative flex items-stretch bg-white dark:bg-[#191919] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md fade-in min-h-[4rem]";
+                    row.className = "group relative flex items-stretch bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md fade-in min-h-[4rem]";
                     row.style = bgStyle;
                     row.innerHTML = `
                         <div class="flex-shrink-0 w-28 sm:w-36 ${innerContainerClass} ${ev.bg_url ? '' : 'border-r border-gray-200 dark:border-gray-800'} p-3 flex items-center justify-center transition-colors relative z-10">
